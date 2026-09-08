@@ -1,0 +1,33 @@
+{
+  "name": "vitnight",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Multiplayer procedural Caves of Qud-style roguelike: The Adventures of Barrett, Luther, and Beau",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "tsx watch src/server/server.ts",
+    "start": "tsx src/server/server.ts",
+    "test": "vitest run",
+    "docker:build": "docker build -t vitnight .",
+    "docker:run": "docker run -p 3000:3000 vitnight",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase": "^11.4.0",
+    "pixi.js": "^8.8.1",
+    "tsx": "^4.19.3",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.10",
+    "@types/ws": "^8.5.14",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1",
+    "vitest": "^3.0.8"
+  }
+}

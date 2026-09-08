@@ -1,0 +1,18 @@
+services:
+  vitnight-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    image: vitnight:dev
+    container_name: vitnight-dev
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: sh -c "npm run server & npm run dev -- --host 0.0.0.0"

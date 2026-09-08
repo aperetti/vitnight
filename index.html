@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Battle of the Homesteads - Caves of Qud Roguelike</title>
+  <link rel="stylesheet" href="/src/client/style.css" />
+</head>
+<body>
+  <div class="crt-overlay"></div>
+
+  <!-- Top HUD -->
+  <header id="top-hud">
+    <div>
+      <span id="hud-location" style="cursor: pointer; text-decoration: underline dotted;" title="Click to view World Overview Map [M]">Homestead Outpost</span>
+      <span id="hud-wave" class="hud-wave-tag" style="margin-left: 10px; color: var(--fire-red); font-weight: bold;"></span>
+      <span id="hud-pacing" class="pacing-turnbased" style="margin-left: 12px;">[TURN-BASED]</span>
+    </div>
+    <div id="hud-quest-container">
+      <span id="hud-quest-title">The Adventure Begins: </span>
+      <span id="hud-quest-desc">Craft Luther's laser at the workbench.</span>
+    </div>
+    <div style="display: flex; align-items: center;">
+      <div id="hud-party">
+        <!-- Party cards populated by UIManager -->
+      </div>
+      <button id="btn-char-sheet" class="hud-char-btn" style="border-color: var(--boss-gold); color: var(--boss-gold); margin-left: 12px; font-weight: bold;" title="Character Sheet & Skills [C]">[C] Hero Skills</button>
+      <button id="btn-inventory-hud" class="hud-char-btn" style="border-color: var(--cyan); color: var(--cyan); margin-left: 8px; font-weight: bold;" title="Inventory & Equipment [I]">[I] Inventory</button>
+    </div>
+  </header>
+
+  <!-- Main View -->
+  <main id="main-view">
+    <div id="game-viewport">
+      <div id="downed-banner" class="downed-banner hidden">
+        ⚠️ YOU ARE DOWNED! Press [Wait / Space] to hold on and let your companions reach and resurrect you!
+      </div>
+      <!-- Tactical Aiming Banner Overlay -->
+      <div id="aiming-banner" class="aiming-banner hidden">
+        <div class="aiming-banner-title">🎯 TACTICAL AIM: <span id="aiming-skill-name">Laser Rifle</span></div>
+        <div class="aiming-banner-hints">[WASD / Arrows / Mouse] Move Reticle • [Enter / Space / Click] FIRE • [Esc / Right-Click] Cancel</div>
+      </div>
+      <!-- Look mode info overlay -->
+      <div id="look-info-card" class="look-info-card hidden">
+        <div class="look-header">
+          <span id="look-title">Target Name</span>
+          <span id="look-coords">[X: 0, Y: 0]</span>
+        </div>
+        <div id="look-category" class="look-category">Category</div>
+        <div id="look-desc" class="look-desc">Description of the object or terrain.</div>
+        <div id="look-detail" class="look-detail"></div>
+        <div class="look-hints">[Arrows/WASD] Move  •  [Enter/Click] Interact  •  [; / Esc] Exit</div>
+      </div>
+
+      <!-- Interaction Menu Modal -->
+      <div id="interaction-modal" class="modal-overlay hidden">
+        <div class="modal-card interaction-modal-card">
+          <h2 id="interaction-target-title">INTERACT</h2>
+          <p id="interaction-target-desc" style="font-size: 12px; color: #8899aa;"></p>
+          <div id="interaction-options-list" class="interaction-options-list">
+            <!-- Dynamic interaction buttons injected here -->
+          </div>
+          <button id="interaction-cancel-btn" style="border-color: var(--hud-border);">Cancel [Esc]</button>
+        </div>
+      </div>
+      <!-- PixiJS Canvas Appends Here -->
+    </div>
+
+    <aside id="side-panel">
+      <div class="panel-header">CHRONICLES & COMBAT LOG</div>
+      <div id="combat-log-content"></div>
+    </aside>
+  </main>
+
+  <!-- Bottom Command & Action Bar -->
+  <footer id="bottom-hud">
+    <div class="action-buttons">
+      <button id="btn-attack">[1] Laser / Strike</button>
+      <button id="btn-special">[2] Ice / Fire / Heal</button>
+      <button id="btn-mine">[3] Mine Rock Wall</button>
+      <button id="btn-craft">[4] Craft / Interact</button>
+      <button id="btn-hotbar-1" class="hotbar-slot-btn hidden" title="Cast Hotbar Skill 1 [5]">[5] Skill</button>
+      <button id="btn-hotbar-2" class="hotbar-slot-btn hidden" title="Cast Hotbar Skill 2 [6]">[6] Skill</button>
+      <button id="btn-hotbar-3" class="hotbar-slot-btn hidden" title="Cast Hotbar Skill 3 [7]">[7] Skill</button>
+      <button id="btn-revive">[R] Revive Ally</button>
+      <button id="btn-look" style="border-color: var(--amber-bright); color: var(--amber-bright);">[;] Look</button>
+      <button id="btn-map" style="border-color: var(--cyan); color: var(--cyan);">[M] Map Overview</button>
+      <button id="btn-char" style="border-color: var(--boss-gold); color: var(--boss-gold);">[C] Skills & Stats</button>
+      <button id="btn-inv" style="border-color: var(--cyan); color: var(--cyan);">[I] Inventory & Gear</button>
+    </div>
+    <div>
+      <button id="btn-settings">[O] Keybindings & Options</button>
+    </div>
+  </footer>
+
+  <!-- World Overview Map Modal -->
+  <div id="world-map-modal" class="modal-overlay hidden">
+    <div class="modal-card world-map-card">
+      <div class="world-map-header">
+        <div>
+          <h2>THE REALM OF THE HOMESTEADS — WORLD OVERVIEW</h2>
+          <div id="world-map-current-pos" class="world-map-current-pos">
+            Current Location: <span class="highlight">Homestead Outpost (Parasang 0, 0)</span>
+          </div>
+        </div>
+        <button id="close-world-map-btn" class="close-btn">[X] Close [M / Esc]</button>
+      </div>
+
+      <!-- Tab Buttons for Map View Modes -->
+      <div class="world-map-tabs">
+        <button id="tab-parsec-grid" class="map-tab-btn active">[#] Overland Map (16x7)</button>
+        <button id="tab-subscreens" class="map-tab-btn">[+] 3x3 Sector Inspector (9 Screens)</button>
+        <button id="tab-milestones" class="map-tab-btn">[*] Story Milestones</button>
+      </div>
+
+      <div class="world-map-content">
+        <!-- Grid of 9 Story Locations across the Parasangs -->
+        <div id="world-map-grid" class="world-map-grid">
+          <!-- Populated dynamically by WorldMapManager -->
+        </div>
+
+        <!-- Detail Sidebar for Selected Location -->
+        <div id="world-map-detail" class="world-map-detail">
+          <div class="detail-header">
+            <img id="detail-sprite" src="/sprites/loc_spawn.png" alt="Location Sprite" class="detail-sprite" />
+            <div>
+              <h3 id="detail-name">Homestead Outpost</h3>
+              <div id="detail-region" class="detail-region">Homestead Valley (Parsec 0, 0)</div>
+              <div id="detail-status" class="detail-status">[@] YOU ARE HERE</div>
+            </div>
+          </div>
+          <div class="detail-section">
+            <span class="detail-label">STORY CHAPTER:</span>
+            <span id="detail-act" class="detail-val">Act I: The Adventure Begins</span>
+          </div>
+          <div class="detail-section">
+            <span class="detail-label">MAIN OBJECTIVE:</span>
+            <p id="detail-objective" class="detail-desc">Craft Luther's laser at the workbench.</p>
+          </div>
+          <div class="detail-section">
+            <span class="detail-label">LOCATION LORE:</span>
+            <p id="detail-summary" class="detail-desc">The starting house and workshop.</p>
+          </div>
+          <div class="detail-section">
+            <span class="detail-label">ENEMIES & DANGERS:</span>
+            <span id="detail-enemies" class="detail-val">Safe Starting Outpost</span>
+          </div>
+          <div class="detail-section rune-power-box">
+            <span class="detail-label">[+] PARTY RUNE POWERS & BUFFS:</span>
+            <div id="detail-rune-stats" class="detail-rune-stats">
+              <span class="rune-stat-tag">[ATK] +0 ATK Damage</span>
+              <span class="rune-stat-tag">[VIT] +0 Max HP</span>
+              <span class="rune-stat-tag">[NRG] +0 Max Energy</span>
+              <span class="rune-stat-tag">[DEF] +0 Shield</span>
+            </div>
+            <div id="detail-rune-count" style="font-size: 11px; color: var(--boss-gold); margin-top: 4px;">Explore wilderness shrines to find ancient power runes!</div>
+          </div>
+          <div class="detail-section" style="margin-top: 12px;">
+            <button id="world-map-travel-btn" class="world-map-travel-btn" style="width: 100%; padding: 12px; background: #0f2b1d; border: 2px solid var(--green); color: #fff; font-weight: bold; cursor: pointer; border-radius: 4px; font-family: monospace; font-size: 13px;">[▶] EMBARK OVERLAND TRAVEL [Enter / T]</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="world-map-footer">
+        <span style="font-size: 11px; color: #778899;">
+          Legend: <span style="color: var(--green);">[CLEARED]</span> • <span style="color: var(--amber-bright);">[ACTIVE]</span> • <span style="color: #667788;">[AHEAD]</span> • <span style="color: var(--cyan);">[@ YOU ARE HERE]</span>
+        </span>
+        <button id="world-map-done-btn" style="border-color: var(--amber);">Return to Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Character Sheet & Skills Modal -->
+  <div id="charsheet-modal" class="modal-overlay hidden">
+    <div class="modal-card charsheet-card">
+      <div class="charsheet-header">
+        <div>
+          <h2 id="charsheet-hero-name" style="margin-bottom: 4px;">HERO CHARACTER SHEET</h2>
+          <div class="charsheet-sub">
+            <span id="charsheet-level-badge" class="charsheet-level-badge">LEVEL 1</span>
+            <span id="charsheet-xp-text" class="charsheet-xp-text">XP: 0 / 100</span>
+            <div class="charsheet-xp-bar"><div id="charsheet-xp-fill" class="charsheet-xp-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+        <button id="close-charsheet-btn" class="close-btn">[X] Close [C / Esc]</button>
+      </div>
+
+      <div class="charsheet-body">
+        <!-- Left Column: Core Attributes -->
+        <div class="charsheet-col-left">
+          <div class="charsheet-section-title">
+            <span>CORE ATTRIBUTES</span>
+            <span id="charsheet-ap-points" class="points-badge">0 Points Available</span>
+          </div>
+          <div id="charsheet-attributes-list" class="charsheet-attributes-list">
+            <!-- Rendered dynamically by CharacterSheetManager -->
+          </div>
+
+          <div class="charsheet-section-title" style="margin-top: 14px;">
+            <span>DERIVED HERO STATS</span>
+          </div>
+          <div id="charsheet-derived-stats" class="charsheet-derived-stats">
+            <!-- Rendered dynamically by CharacterSheetManager -->
+          </div>
+        </div>
+
+        <!-- Right Column: Skills & Disciplines -->
+        <div class="charsheet-col-right">
+          <div class="charsheet-section-title">
+            <span>SKILLS & DISCIPLINES</span>
+            <span id="charsheet-sp-points" class="points-badge">0 Points Available</span>
+          </div>
+          <div id="charsheet-skills-list" class="charsheet-skills-list">
+            <!-- Rendered dynamically by CharacterSheetManager -->
+          </div>
+        </div>
+      </div>
+
+      <div class="charsheet-footer">
+        <span style="font-size: 11px; color: #778899;">Earn Attribute Points and Skill Points by defeating hostile waves, collecting ancient runes, and leveling up.</span>
+        <button id="charsheet-done-btn" style="border-color: var(--amber);">Done [Esc]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory & Equipment Modal -->
+  <div id="inventory-modal" class="modal-overlay hidden">
+    <div class="modal-card inventory-modal-card">
+      <div class="inventory-header">
+        <div>
+          <h2 id="inventory-hero-title">HERO — INVENTORY & EQUIPMENT</h2>
+          <div class="inventory-capacity-row">
+            <span id="inventory-weight-text" class="inventory-weight-text">Carrying: 0.0 / 100.0 lbs</span>
+            <div class="inventory-weight-bar-bg">
+              <div id="inventory-weight-fill" class="inventory-weight-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+        <button id="close-inventory-btn" class="close-btn">[X] Close [I / Esc]</button>
+      </div>
+
+      <div class="inventory-content-columns">
+        <!-- Left Column: Equipment Paperdoll -->
+        <div class="inventory-col-left">
+          <div class="inventory-section-title">
+            <span>EQUIPMENT & GEAR</span>
+          </div>
+          <div id="inventory-paperdoll-list" class="inventory-paperdoll-list">
+            <!-- Dynamic paperdoll slots rendered here -->
+          </div>
+          <div class="gear-totals-box">
+            <div class="gear-totals-title">TOTAL EQUIPMENT BONUSES:</div>
+            <div id="inventory-gear-totals" class="gear-totals-list"></div>
+          </div>
+        </div>
+
+        <!-- Right Column: Backpack & Ground Loot -->
+        <div class="inventory-col-right">
+          <div class="inventory-tabs-row">
+            <button id="inv-tab-all" class="inv-tab-btn active">🎒 All</button>
+            <button id="inv-tab-equip" class="inv-tab-btn">⚔️ Gear</button>
+            <button id="inv-tab-consumables" class="inv-tab-btn">🧪 Consumables</button>
+            <button id="inv-tab-materials" class="inv-tab-btn">🔩 Materials</button>
+          </div>
+
+          <div id="inventory-backpack-items" class="inventory-backpack-items">
+            <!-- Dynamic backpack item cards rendered here -->
+          </div>
+
+          <!-- Ground Items (Underfoot) -->
+          <div id="inventory-ground-items" class="inventory-ground-container">
+            <!-- Dynamic ground items rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="inventory-footer">
+        <span style="font-size: 11px; color: #778899;">Press [I] to toggle inventory. Press [G] or [,] to pick up ground loot underfoot. Equip weapons and armor to boost your combat effectiveness!</span>
+        <button id="inventory-done-btn" style="border-color: var(--cyan); color: var(--cyan);">Done [I / Esc]</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Travel Event Announcement Modal -->
+  <div id="travel-event-modal" class="modal-overlay hidden">
+    <div class="modal-card travel-event-card" style="text-align: center; max-width: 520px;">
+      <h2 id="travel-event-title" style="color: var(--boss-gold); margin-bottom: 8px;">TRAVEL EVENT</h2>
+      <div id="travel-event-icon" style="font-size: 44px; margin: 12px 0;">🧭</div>
+      <p id="travel-event-message" style="font-size: 14px; line-height: 1.6; color: #ccddff; margin-bottom: 16px;"></p>
+      <button id="travel-event-dismiss-btn" style="border-color: var(--cyan); color: var(--cyan); padding: 10px 24px; font-weight: bold; cursor: pointer;">Continue Exploration [Space / Enter]</button>
+    </div>
+  </div>
+
+  <!-- Hero Select Modal -->
+  <div id="hero-select-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>SELECT YOUR HERO</h2>
+      <p style="font-size: 13px; color: var(--hud-text);">
+        The realm of the homesteads is in peril! Cooper's birthday adventure begins. Choose your hero archetype (unselected heroes will join as intelligent AI companions):
+      </p>
+      <div style="display: flex; gap: 12px; margin: 12px 0;">
+        <button id="select-barrett" style="flex: 1; padding: 14px; border-color: var(--amber-bright); color: var(--amber-bright);">
+          <strong>BARRETT</strong><br/><span style="font-size: 11px;">Clever Miner & Fireball Crafter</span>
+        </button>
+        <button id="select-luther" style="flex: 1; padding: 14px; border-color: var(--green); color: var(--green);">
+          <strong>LUTHER</strong><br/><span style="font-size: 11px;">Fearless Fighter & Combat Medic</span>
+        </button>
+        <button id="select-beau" style="flex: 1; padding: 14px; border-color: var(--cyan); color: var(--cyan);">
+          <strong>BEAU</strong><br/><span style="font-size: 11px;">Cryomancer Ice-Blaster</span>
+        </button>
+      </div>
+      <div style="font-size: 11px; color: #778899;">
+        Room: <input type="text" id="room-input" value="coopers-party" style="background: #020406; border: 1px solid #334455; color: #fff; padding: 4px 8px; font-family: monospace;" />
+        (Open this URL with the same room in another browser tab or device for instant co-op!)
+      </div>
+    </div>
+  </div>
+
+  <!-- Story Dialogue Modal -->
+  <div id="dialogue-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="dialogue-content">
+        <div id="dialogue-avatar">@</div>
+        <div style="flex: 1;">
+          <div id="dialogue-speaker">Speaker</div>
+          <div id="dialogue-text">Dialogue message text...</div>
+        </div>
+      </div>
+      <button id="dialogue-continue-btn" style="align-self: flex-end; background: #1a2a3a; border-color: var(--amber);">Continue [Space / Click]</button>
+    </div>
+  </div>
+
+  <!-- Settings & Keybindings Modal -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2>OPTIONS & KEY MAPPINGS</h2>
+      <p style="font-size: 12px; color: #8899aa;">Click any button to rebind its key. Changes save automatically to your browser.</p>
+
+      <div id="keybindings-list">
+        <!-- Injected via ui.ts -->
+      </div>
+
+      <div class="slider-group">
+        <label for="tick-rate-slider">Co-op Real-Time Tick Rate:</label>
+        <input type="range" id="tick-rate-slider" min="2" max="10" value="5" step="1" />
+        <span id="tick-rate-val" style="color: var(--green); font-weight: bold; width: 100px; text-align: right;">5 Hz (200ms)</span>
+      </div>
+
+      <div class="sso-group">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>Firebase Single Sign-On (Cloud Sync):</span>
+          <button id="btn-firebase-sso">Sign in with Firebase / Google</button>
+        </div>
+        <span id="sso-status">Saved locally in browser localStorage.</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+        <button id="btn-reset-keys">Reset to Defaults</button>
+        <button id="close-settings-btn" style="border-color: var(--amber);">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/client/main.ts"></script>
+</body>
+</html>
