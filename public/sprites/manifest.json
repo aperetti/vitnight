@@ -35,5 +35,18 @@
   "loc_skeleton": "/sprites/loc_skeleton.png",
   "loc_creeper": "/sprites/loc_creeper.png",
   "loc_power": "/sprites/loc_power.png",
-  "loc_rocky": "/sprites/loc_rocky.png"
+  "loc_rocky": "/sprites/loc_rocky.png",
+  "loc_final": "/sprites/loc_final.png",
+  "loc_ruins": "/sprites/loc_ruins.png",
+  "map_mountains": "/sprites/map_mountains.png",
+  "map_jungle": "/sprites/map_jungle.png",
+  "map_deep_jungle": "/sprites/map_deep_jungle.png",
+  "map_flowers": "/sprites/map_flowers.png",
+  "map_river": "/sprites/map_river.png",
+  "map_desert": "/sprites/map_desert.png",
+  "map_canyon": "/sprites/map_canyon.png",
+  "map_marsh": "/sprites/map_marsh.png",
+  "map_ruins": "/sprites/map_ruins.png",
+  "map_shrine": "/sprites/map_shrine.png",
+  "map_monolith": "/sprites/map_monolith.png"
 }

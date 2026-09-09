@@ -587,24 +587,15 @@ export class GameEngine {
       }
     }
 
-    // 5. Check wall mining (Barrett)
-    if (tile && tile.type === 'wall') {
-      if (player.role === 'barrett' && dist <= 1.5) {
-        tile.type = 'floor';
-        tile.char = '.';
-        tile.color = COLORS.darkGray;
-        tile.walkable = true;
-        tile.transparent = true;
-        this.log(`${player.name} mines through the rock wall!`, 'system');
-        this.addFloatingText(targetX, targetY, '*MINED*', COLORS.amberBright);
+    // 5. Check wall mining
+    if (tile && (!tile.walkable || tile.type === 'wall' || tile.type === 'breakable_wall')) {
+      if (dist <= 1.5) {
+        this.executeBumpMine(player, zone, targetX, targetY, tile);
         if (this.getPacingModeForZone(player.zone) === 'turn_based') {
           this.stepZoneSimulation(player.zone);
         } else {
           this.notifyZone(player.zone);
         }
-        return;
-      } else if (dist <= 1.5) {
-        this.log(`This wall is solid stone. Only Barrett the Miner can dig through it!`, 'system');
         return;
       }
     }
@@ -1980,6 +1971,16 @@ export class GameEngine {
     };
   }
 
+  public setZoneTile(zone: ZoneData, x: number, y: number, newTile: Tile) {
+    if (zone.tiles[y]) {
+      zone.tiles[y][x] = newTile;
+      if (!zone.tileUpdates) {
+        zone.tileUpdates = [];
+      }
+      zone.tileUpdates.push({ x, y, tile: newTile });
+    }
+  }
+
   public executeBumpMine(player: Entity, zone: ZoneData, tx: number, ty: number, tile: Tile): boolean {
     if (tile.walkable) return false;
     // Don't mine interactables
@@ -2015,23 +2016,24 @@ export class GameEngine {
 
     if ((tile.hp ?? 0) <= 0) {
       const isBorder = (tx === 0 || tx === zone.width - 1 || ty === 0 || ty === zone.height - 1);
+      const newFloorTile: Tile = isBorder ? {
+        type: 'floor',
+        char: '░',
+        color: COLORS.dirtPath,
+        walkable: true,
+        transparent: true
+      } : {
+        type: 'floor',
+        char: '.',
+        color: COLORS.darkGray,
+        walkable: true,
+        transparent: true
+      };
+      this.setZoneTile(zone, tx, ty, newFloorTile);
+
       if (isBorder) {
-        zone.tiles[ty][tx] = {
-          type: 'floor',
-          char: '░',
-          color: COLORS.dirtPath,
-          walkable: true,
-          transparent: true
-        };
         this.log(`💥 ${player.name} breaks through the perimeter wall, opening an exit to the neighboring screen!`, 'story');
       } else {
-        zone.tiles[ty][tx] = {
-          type: 'floor',
-          char: '.',
-          color: COLORS.darkGray,
-          walkable: true,
-          transparent: true
-        };
         this.log(`${player.name} swings their ${tool.name} and mines through the solid rock wall!`, 'combat');
       }
       this.addFloatingText(tx, ty, '*EXCAVATED!*', COLORS.greenBright);

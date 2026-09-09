@@ -103,12 +103,14 @@ describe('Network ZONE_CHANGED Delivery', () => {
   let wss: WebSocketServer;
   let port: number;
   let room: GameRoom;
+  let testRoomId: string;
 
   beforeAll(async () => {
+    testRoomId = `test-map-room-${Date.now()}`;
     const app = express();
     server = http.createServer(app);
     wss = new WebSocketServer({ server, path: '/ws' });
-    room = new GameRoom('map-room');
+    room = new GameRoom(testRoomId);
 
     wss.on('connection', (ws: WebSocket) => {
       room.clients.set(ws, {});
@@ -143,7 +145,7 @@ describe('Network ZONE_CHANGED Delivery', () => {
       client.on('open', () => {
         client.send(JSON.stringify({
           type: 'JOIN_ROOM',
-          roomId: 'map-room',
+          roomId: testRoomId,
           hero: 'barrett',
           playerName: 'BarrettDigger'
         }));
@@ -205,6 +207,7 @@ describe('Network ZONE_CHANGED Delivery', () => {
         expect(terrain.biomeName).toBeTruthy();
         expect(terrain.description).toBeTruthy();
         expect(terrain.dangerLevel).toBeGreaterThanOrEqual(1);
+        expect(terrain.spriteUrl).toMatch(/^\/sprites\/(map_|loc_).+\.png$/);
 
         // Verify NO emojis are used in the glyph or names
         expect(emojiRegex.test(terrain.glyph)).toBe(false);

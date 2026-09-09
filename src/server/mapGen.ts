@@ -1,5 +1,6 @@
 import { ZoneCoord, ZoneData, Tile, Item } from '../shared/types';
 import { ZONE_WIDTH, ZONE_HEIGHT, SYMBOLS, COLORS, RAINBOW_ORDER } from '../shared/constants';
+export { ZONE_WIDTH, ZONE_HEIGHT };
 
 function createBlankTiles(fillType: 'wall' | 'floor' = 'floor'): Tile[][] {
   const tiles: Tile[][] = [];
@@ -809,9 +810,35 @@ function createRuneItem(type: string, rng: () => number): Item {
   }
 }
 
-function ensureZoneConnectivity(tiles: Tile[][], width: number, height: number, pathColor: string = COLORS.dirtPath): void {
-  const startX = 23;
-  const startY = 13;
+function ensureZoneConnectivity(
+  tiles: Tile[][],
+  width: number,
+  height: number,
+  pathColor: string = COLORS.dirtPath,
+  keyPoints: { x: number; y: number }[] = []
+): void {
+  // Find a central walkable point or use (23, 13)
+  let startX = 23;
+  let startY = 13;
+  if (!tiles[startY]?.[startX]?.walkable) {
+    for (let r = 0; r < 15; r++) {
+      let found = false;
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          const nx = startX + dx;
+          const ny = startY + dy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height && tiles[ny][nx].walkable) {
+            startX = nx;
+            startY = ny;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+      if (found) break;
+    }
+  }
 
   tiles[startY][startX].walkable = true;
   tiles[startY][startX].transparent = true;
@@ -834,15 +861,16 @@ function ensureZoneConnectivity(tiles: Tile[][], width: number, height: number, 
     }
   }
 
-  const borderTargets = [
-    { x: 23, y: 0 }, { x: 24, y: 0 }, // North
-    { x: 23, y: height - 1 }, { x: 24, y: height - 1 }, // South
-    { x: 0, y: 13 }, { x: 0, y: 14 }, // West
-    { x: width - 1, y: 13 }, { x: width - 1, y: 14 }  // East
+  const borderTargets: { x: number; y: number }[] = [
+    { x: 23, y: 0 }, { x: 24, y: 0 }, // North center
+    { x: 23, y: height - 1 }, { x: 24, y: height - 1 }, // South center
+    { x: 0, y: 13 }, { x: 0, y: 14 }, // West center
+    { x: width - 1, y: 13 }, { x: width - 1, y: 14 },  // East center
+    ...keyPoints
   ];
 
   for (const pt of borderTargets) {
-    if (!visited[pt.y][pt.x]) {
+    if (pt.y >= 0 && pt.y < height && pt.x >= 0 && pt.x < width && !visited[pt.y][pt.x]) {
       let cx = startX;
       let cy = startY;
       while (cx !== pt.x || cy !== pt.y) {
@@ -851,21 +879,22 @@ function ensureZoneConnectivity(tiles: Tile[][], width: number, height: number, 
         if (cy < pt.y) cy++;
         else if (cy > pt.y) cy--;
 
-        tiles[cy][cx] = {
-          type: 'floor',
-          char: '░',
-          color: pathColor,
-          walkable: true,
-          transparent: true
-        };
+        if (tiles[cy]?.[cx] && !tiles[cy][cx].walkable) {
+          tiles[cy][cx] = {
+            type: 'floor',
+            char: '░',
+            color: pathColor,
+            walkable: true,
+            transparent: true
+          };
+        }
+        if (tiles[cy]?.[cx]) visited[cy][cx] = true;
       }
-      tiles[pt.y][pt.x] = {
-        type: 'floor',
-        char: '░',
-        color: pathColor,
-        walkable: true,
-        transparent: true
-      };
+      if (tiles[pt.y]?.[pt.x]) {
+        tiles[pt.y][pt.x].walkable = true;
+        tiles[pt.y][pt.x].transparent = true;
+        visited[pt.y][pt.x] = true;
+      }
     }
   }
 }
@@ -904,8 +933,8 @@ export function generateProceduralWilderness(coord: ZoneCoord): ZoneData {
 
   const items: { x: number; y: number; item: Item }[] = [];
 
-  // 3. Select 1 of 8 Rich Procedural Archetypes
-  const archetype = Math.floor(rng() * 8);
+  // 3. Select 1 of 9 Rich Procedural Archetypes
+  const archetype = Math.floor(rng() * 9);
   let archetypeName = 'Wilds';
 
   switch (archetype) {
@@ -1183,9 +1212,60 @@ export function generateProceduralWilderness(coord: ZoneCoord): ZoneData {
       break;
     }
 
-    case 7:
+    case 7: {
+      // Archetype 7: Wildflower Meadow & Watervine Orchard
+      archetypeName = 'Wildflower Meadow';
+      const flowerColors = ['#f472b6', '#38bdf8', '#facc15', '#c084fc', '#4ade80'];
+      for (let y = 3; y < ZONE_HEIGHT - 3; y++) {
+        for (let x = 3; x < ZONE_WIDTH - 3; x++) {
+          const flowerHash = (x * 17 + y * 31 + seed) % 100;
+          if (flowerHash < 18) {
+            // Wildflower bloom
+            tiles[y][x] = {
+              type: 'floor',
+              char: flowerHash % 3 === 0 ? '*' : (flowerHash % 3 === 1 ? '✿' : ','),
+              color: flowerColors[flowerHash % flowerColors.length],
+              walkable: true,
+              transparent: true
+            };
+          } else if (flowerHash >= 80 && flowerHash < 88) {
+            // Watervine stalk
+            tiles[y][x] = {
+              type: 'breakable_wall',
+              char: flowerHash % 2 === 0 ? '♣' : '¥',
+              color: '#22c55e',
+              walkable: false,
+              transparent: true,
+              minable: true,
+              hp: 20,
+              maxHp: 20,
+              requiredTier: 0,
+              oreDrop: 'pom_pom_fruit',
+              oreName: 'Watervine Stalk'
+            };
+          }
+        }
+      }
+      items.push({
+        x: 15 + Math.floor(rng() * 18),
+        y: 8 + Math.floor(rng() * 12),
+        item: {
+          id: `starapple-${Math.floor(rng() * 10000)}`,
+          name: 'Sweet Starapple',
+          type: 'consumable',
+          symbol: '♣',
+          color: '#fbbf24',
+          healHp: 30,
+          restoreEnergy: 25,
+          description: 'A plump, fragrant starapple harvested from wild watervine groves.'
+        }
+      });
+      break;
+    }
+
+    case 8:
     default: {
-      // Archetype 7: Derelict Tech Caravan
+      // Archetype 8: Derelict Tech Caravan
       archetypeName = 'Derelict Caravan';
       for (let x = 12; x <= 16; x++) {
         tiles[8][x] = { type: 'wall', char: '[', color: COLORS.darkGray, walkable: false, transparent: false, minable: true, hp: 40, maxHp: 40, requiredTier: 1, oreDrop: 'scrap_metal', oreName: 'Rusted Armored Hauler' };
@@ -1240,28 +1320,85 @@ export function generateProceduralWilderness(coord: ZoneCoord): ZoneData {
     }
   }
 
-  // 5. CRITICAL CONNECTIVITY GUARANTEE: Arterial Crossroads
+  // 5. ORGANIC MEANDERING TRAILS & CROSSROADS
+  // We carve natural meandering trails connecting all cardinal borders
+  const yStartW = 9 + (Math.abs(seed ^ 0x3f1a) % 10);  // 9..18
+  const yEndE = 9 + (Math.abs(seed ^ 0xa82b) % 10);    // 9..18
+  const xStartN = 16 + (Math.abs(seed ^ 0x5c4d) % 16);  // 16..31
+  const xEndS = 16 + (Math.abs(seed ^ 0xd1e2) % 16);    // 16..31
+
+  // West-to-East Meandering Trail
   for (let x = 0; x < ZONE_WIDTH; x++) {
-    tiles[13][x] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
-    tiles[14][x] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
-  }
-  for (let y = 0; y < ZONE_HEIGHT; y++) {
-    tiles[y][23] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
-    tiles[y][24] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+    const t = x / (ZONE_WIDTH - 1);
+    const baseY = (1 - t) * yStartW + t * yEndE;
+    const wave = Math.sin(x * 0.22 + seed * 0.05) * 3.5 + Math.cos(x * 0.09 + seed * 0.12) * 2.0;
+    const trailY = Math.round(Math.max(2, Math.min(ZONE_HEIGHT - 3, baseY + wave)));
+
+    for (let dy = 0; dy <= 1; dy++) {
+      const py = trailY + dy;
+      if (py >= 0 && py < ZONE_HEIGHT) {
+        if (tiles[py][x].type === 'water') {
+          tiles[py][x] = { type: 'floor', char: '=', color: COLORS.amber, walkable: true, transparent: true };
+        } else {
+          tiles[py][x] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+        }
+      }
+    }
+
+    // Soft trail fringes (small pebbles and path dust)
+    if (rng() < 0.35 && trailY - 1 >= 1 && tiles[trailY - 1][x].walkable && tiles[trailY - 1][x].type === 'floor') {
+      tiles[trailY - 1][x].char = '.';
+    }
+    if (rng() < 0.35 && trailY + 2 < ZONE_HEIGHT - 1 && tiles[trailY + 2][x].walkable && tiles[trailY + 2][x].type === 'floor') {
+      tiles[trailY + 2][x].char = '.';
+    }
   }
 
-  // Secondary gateways carved through landscape
+  // North-to-South Meandering Trail
   for (let y = 0; y < ZONE_HEIGHT; y++) {
-    if (tiles[y][10]?.type === 'wall' || tiles[y][10]?.type === 'breakable_wall') {
-      tiles[y][10] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+    const t = y / (ZONE_HEIGHT - 1);
+    const baseX = (1 - t) * xStartN + t * xEndS;
+    const wave = Math.cos(y * 0.28 + seed * 0.08) * 4.5 + Math.sin(y * 0.12 + seed * 0.03) * 2.5;
+    const trailX = Math.round(Math.max(2, Math.min(ZONE_WIDTH - 3, baseX + wave)));
+
+    for (let dx = 0; dx <= 1; dx++) {
+      const px = trailX + dx;
+      if (px >= 0 && px < ZONE_WIDTH) {
+        if (tiles[y][px].type === 'water') {
+          tiles[y][px] = { type: 'floor', char: '=', color: COLORS.amber, walkable: true, transparent: true };
+        } else {
+          tiles[y][px] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+        }
+      }
     }
-    if (tiles[y][36]?.type === 'wall' || tiles[y][36]?.type === 'breakable_wall') {
-      tiles[y][36] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+  }
+
+  // Meandering Branch to Ruins or Cave Entrance if present
+  if (hasCave) {
+    const cx = 18;
+    const cy = 9;
+    for (let x = Math.min(xStartN, cx); x <= Math.max(xStartN, cx); x++) {
+      if (tiles[cy]?.[x]) {
+        tiles[cy][x] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+      }
     }
+  }
+
+  // Ensure cardinal exits and center gates are open for seamless cross-screen transitions
+  for (let x = 22; x <= 25; x++) {
+    tiles[0][x] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+    tiles[ZONE_HEIGHT - 1][x] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+  }
+  for (let y = 12; y <= 15; y++) {
+    tiles[y][0] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
+    tiles[y][ZONE_WIDTH - 1] = { type: 'floor', char: '░', color: COLORS.dirtPath, walkable: true, transparent: true };
   }
 
   // 6. BFS Reachability Validation
-  ensureZoneConnectivity(tiles, ZONE_WIDTH, ZONE_HEIGHT, COLORS.dirtPath);
+  ensureZoneConnectivity(tiles, ZONE_WIDTH, ZONE_HEIGHT, COLORS.dirtPath, [
+    { x: 0, y: yStartW }, { x: ZONE_WIDTH - 1, y: yEndE },
+    { x: xStartN, y: 0 }, { x: xEndS, y: ZONE_HEIGHT - 1 }
+  ]);
 
   const finalName = hasRuins
     ? `Forgotten Ruins of Qud [Parsec (${parasangX}, ${parasangY}), Screen (${zoneX}, ${zoneY})]`

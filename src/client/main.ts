@@ -1165,6 +1165,18 @@ class ClientApp {
           this.currentZone.items = msg.items;
           this.lastEntities = msg.entities;
 
+          if (msg.tileUpdates) {
+            for (const upd of msg.tileUpdates) {
+              if (this.currentZone.tiles[upd.y] && this.currentZone.tiles[upd.y][upd.x]) {
+                this.currentZone.tiles[upd.y][upd.x] = upd.tile;
+                this.renderer.updateTile(upd.x, upd.y, upd.tile, this.currentZone);
+              }
+            }
+          }
+          if (msg.tiles) {
+            this.currentZone.tiles = msg.tiles;
+          }
+
           const myPlayer = msg.entities.find(e => e.id === this.myEntityId);
           if (myPlayer) {
             if (myPlayer.isDowned && this.isAiming) {

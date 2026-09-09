@@ -568,6 +568,79 @@ export class GameRenderer {
     return container;
   }
 
+  private createTileDisplay(x: number, y: number, tile: Tile, zone: ZoneData): Sprite | Text | Graphics | Container {
+    // 1. Continuous Wall autotiling
+    if (tile.type === 'wall' || tile.type === 'breakable_wall') {
+      return this.createWallTile(x, y, tile, zone);
+    }
+
+    // 2. Sacred Altar Pedestals
+    if (tile.type === 'altar') {
+      return this.createAltarTile(x, y, tile, zone);
+    }
+
+    // 3. Preloaded sprite or font glyph fallback
+    const spriteUrl = this.getSpriteUrlForTile(tile, zone);
+    const tex = spriteUrl ? this.getTexture(spriteUrl) : null;
+    if (tex) {
+      const spr = new Sprite(tex);
+      spr.width = CELL_SIZE;
+      spr.height = CELL_SIZE;
+      spr.x = x * CELL_SIZE;
+      spr.y = y * CELL_SIZE;
+      return spr;
+    } else {
+      const txt = new Text({
+        text: tile.char,
+        style: {
+          fontFamily: 'Courier New, monospace',
+          fontSize: CELL_SIZE - 2,
+          fontWeight: 'bold',
+          align: 'center',
+          fill: tile.color
+        }
+      });
+      txt.x = x * CELL_SIZE + 2;
+      txt.y = y * CELL_SIZE + 2;
+      return txt;
+    }
+  }
+
+  public updateTile(x: number, y: number, tile: Tile, zone: ZoneData) {
+    if (!this.tileSprites[y]) return;
+    const oldDisplay = this.tileSprites[y][x];
+    if (oldDisplay) {
+      this.mapContainer.removeChild(oldDisplay);
+      if ('destroy' in oldDisplay) {
+        (oldDisplay as any).destroy({ children: true });
+      }
+    }
+    const newDisplay = this.createTileDisplay(x, y, tile, zone);
+    this.mapContainer.addChild(newDisplay);
+    this.tileSprites[y][x] = newDisplay;
+
+    // If a wall was cleared to floor, re-render cardinal neighboring walls to update autotiling rims
+    if (tile.type === 'floor') {
+      for (const [adx, ady] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+        const nx = x + adx;
+        const ny = y + ady;
+        const neighbor = zone.tiles[ny]?.[nx];
+        if (neighbor && (neighbor.type === 'wall' || neighbor.type === 'breakable_wall')) {
+          const oldGfx = this.tileSprites[ny]?.[nx];
+          if (oldGfx) {
+            this.mapContainer.removeChild(oldGfx);
+            if ('destroy' in oldGfx) {
+              (oldGfx as any).destroy({ children: true });
+            }
+          }
+          const updatedWall = this.createWallTile(nx, ny, neighbor, zone);
+          this.mapContainer.addChild(updatedWall);
+          this.tileSprites[ny][nx] = updatedWall;
+        }
+      }
+    }
+  }
+
   public setZone(zone: ZoneData) {
     this.currentZone = zone;
     this.mapContainer.removeChildren();
@@ -577,58 +650,13 @@ export class GameRenderer {
     this.textContainer.removeChildren();
     this.tileSprites = [];
 
-    const style = new TextStyle({
-      fontFamily: 'Courier New, monospace',
-      fontSize: CELL_SIZE - 2,
-      fontWeight: 'bold',
-      align: 'center'
-    });
-
     for (let y = 0; y < zone.height; y++) {
       const row: (Sprite | Text | Graphics | Container)[] = [];
       for (let x = 0; x < zone.width; x++) {
         const tile = zone.tiles[y][x];
-
-        // 1. Continuous Wall autotiling
-        if (tile.type === 'wall' || tile.type === 'breakable_wall') {
-          const wallGfx = this.createWallTile(x, y, tile, zone);
-          this.mapContainer.addChild(wallGfx);
-          row.push(wallGfx);
-          continue;
-        }
-
-        // 2. Sacred Altar Pedestals
-        if (tile.type === 'altar') {
-          const altarTile = this.createAltarTile(x, y, tile, zone);
-          this.mapContainer.addChild(altarTile);
-          row.push(altarTile);
-          continue;
-        }
-
-        // 3. Preloaded sprite or font glyph fallback
-        const spriteUrl = this.getSpriteUrlForTile(tile, zone);
-        const tex = spriteUrl ? this.getTexture(spriteUrl) : null;
-        if (tex) {
-          const spr = new Sprite(tex);
-          spr.width = CELL_SIZE;
-          spr.height = CELL_SIZE;
-          spr.x = x * CELL_SIZE;
-          spr.y = y * CELL_SIZE;
-          this.mapContainer.addChild(spr);
-          row.push(spr);
-        } else {
-          const txt = new Text({
-            text: tile.char,
-            style: {
-              ...style,
-              fill: tile.color
-            }
-          });
-          txt.x = x * CELL_SIZE + 2;
-          txt.y = y * CELL_SIZE + 2;
-          this.mapContainer.addChild(txt);
-          row.push(txt);
-        }
+        const display = this.createTileDisplay(x, y, tile, zone);
+        this.mapContainer.addChild(display);
+        row.push(display);
       }
       this.tileSprites.push(row);
     }
@@ -673,22 +701,9 @@ export class GameRenderer {
           const tile = zone.tiles[y][x];
 
           // If a wall was mined into floor, dynamically replace its sprite
-          if (tile.type === 'floor' && !(sprite instanceof Text)) {
-            this.mapContainer.removeChild(sprite);
-            const txt = new Text({
-              text: tile.char,
-              style: {
-                fontFamily: 'Courier New, monospace',
-                fontSize: CELL_SIZE - 2,
-                fontWeight: 'bold',
-                fill: tile.color
-              }
-            });
-            txt.x = x * CELL_SIZE + 2;
-            txt.y = y * CELL_SIZE + 2;
-            this.mapContainer.addChild(txt);
-            this.tileSprites[y][x] = txt;
-            sprite = txt;
+          if (tile.type === 'floor' && !(sprite instanceof Text) && !(sprite instanceof Sprite)) {
+            this.updateTile(x, y, tile, zone);
+            sprite = this.tileSprites[y][x];
           }
 
           if ('text' in sprite) {

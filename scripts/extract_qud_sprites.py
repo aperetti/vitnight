@@ -65,6 +65,31 @@ SPRITE_MAP = {
     "tile_dirt": "dirt.png",
     "tile_watervine": "watervine.png",
     "tile_boulder": "small boulder.png",
+
+    # Overland World Map & Terrain Tiles
+    "map_mountains": "Mountains.png",
+    "map_jungle": "Jungle.png",
+    "map_deep_jungle": "Deep jungle.png",
+    "map_flowers": "Bouquet of flowers.png",
+    "map_river": "River.png",
+    "map_desert": "Salt dunes.png",
+    "map_canyon": "Desert canyons.png",
+    "map_marsh": "Salt marsh.png",
+    "map_ruins": "Baroque ruins.png",
+    "map_shrine": "Ruined shrine.png",
+    "map_monolith": "Stone monolith.png",
+
+    # Overworld Landmarks (POIs)
+    "loc_spawn": "Ovw joppa.png",
+    "loc_mines": "Ovw asphalt mines.png",
+    "loc_creek": "Ovw red rock.png",
+    "loc_mountain": "Ovw rainbow wood.png",
+    "loc_skeleton": "Ovw bethesda susa.png",
+    "loc_creeper": "Ovw golgotha.png",
+    "loc_power": "Ovw rust wells.png",
+    "loc_rocky": "Ovw six day stilt.png",
+    "loc_final": "Ovw tomb of the eaters.png",
+    "loc_ruins": "Ovw rusted archway.png"
 }
 
 def main():

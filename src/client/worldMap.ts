@@ -256,6 +256,7 @@ export interface ParsecTerrainInfo {
   landmarkName?: string;
   dangerLevel: number;
   description: string;
+  spriteUrl: string;
 }
 
 export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo {
@@ -271,7 +272,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       isLandmark: true,
       landmarkName: 'Homestead Outpost & Workshop',
       dangerLevel: 1,
-      description: 'The peaceful starting outpost where Barrett, Luther, and Beau craft gear.'
+      description: 'The peaceful starting outpost where Barrett, Luther, and Beau craft gear.',
+      spriteUrl: '/sprites/loc_spawn.png'
     };
   }
   const milestone = STORY_LOCATIONS.find(l => l.coord.depth === 0 && l.coord.parasangX === px && l.coord.parasangY === py);
@@ -287,7 +289,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Homestead Outpost & Workshop',
         dangerLevel: 1,
-        description: 'The peaceful starting outpost where Barrett, Luther, and Beau craft gear.'
+        description: 'The peaceful starting outpost where Barrett, Luther, and Beau craft gear.',
+        spriteUrl: '/sprites/loc_spawn.png'
       };
     }
     if (milestone.id === 'loc_creek') {
@@ -301,7 +304,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Zombie Creek & Ghost Rapids',
         dangerLevel: 2,
-        description: 'A haunted wetland watercourse where phasing undead slip through walls.'
+        description: 'A haunted wetland watercourse where phasing undead slip through walls.',
+        spriteUrl: '/sprites/loc_creek.png'
       };
     }
     if (milestone.id === 'loc_mountain') {
@@ -315,7 +319,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Water Mountain & Rainbow Altar',
         dangerLevel: 2,
-        description: 'A towering snow-dusted peak holding the ancient Rainbow Pom-Pom Altar.'
+        description: 'A towering snow-dusted peak holding the ancient Rainbow Pom-Pom Altar.',
+        spriteUrl: '/sprites/loc_mountain.png'
       };
     }
     if (milestone.id === 'loc_skeleton') {
@@ -329,7 +334,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Skeleton Homestead Fortress',
         dangerLevel: 3,
-        description: 'Heavily defended bone battlements overrun by mutant skeletal archers.'
+        description: 'Heavily defended bone battlements overrun by mutant skeletal archers.',
+        spriteUrl: '/sprites/loc_skeleton.png'
       };
     }
     if (milestone.id === 'loc_creeper') {
@@ -343,7 +349,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Creeper Homestead & Energy Shield',
         dangerLevel: 4,
-        description: 'A volcanic redoubt surrounded by an impenetrable forcefield.'
+        description: 'A volcanic redoubt surrounded by an impenetrable forcefield.',
+        spriteUrl: '/sprites/loc_creeper.png'
       };
     }
     if (milestone.id === 'loc_power') {
@@ -357,7 +364,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Power Down (The Complex) Reactor',
         dangerLevel: 4,
-        description: 'A humming techno-complex supplying power to rogue automatons.'
+        description: 'A humming techno-complex supplying power to rogue automatons.',
+        spriteUrl: '/sprites/loc_power.png'
       };
     }
     if (milestone.id === 'loc_rocky') {
@@ -371,7 +379,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: 'Rocky Doom Colosseum',
         dangerLevel: 5,
-        description: 'A colossal gladiatorial arena of flying boulders and rock titans.'
+        description: 'A colossal gladiatorial arena of flying boulders and rock titans.',
+        spriteUrl: '/sprites/loc_rocky.png'
       };
     }
     if (milestone.id === 'loc_final') {
@@ -385,7 +394,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
         isLandmark: true,
         landmarkName: "The Final Stand (Cooper's Birthday)",
         dangerLevel: 6,
-        description: "The climactic battleground where young Cooper is trapped by the Nether Titan."
+        description: "The climactic battleground where young Cooper is trapped by the Nether Titan.",
+        spriteUrl: '/sprites/loc_final.png'
       };
     }
   }
@@ -402,7 +412,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       isLandmark: true,
       landmarkName: 'Forgotten Arcology Ruins',
       dangerLevel: Math.min(5, Math.floor(px / 3) + 1),
-      description: 'Collapsed chrome archways, weathered marble steles, and ancient forgotten treasures.'
+      description: 'Collapsed chrome archways, weathered marble steles, and ancient forgotten treasures.',
+      spriteUrl: '/sprites/map_ruins.png'
     };
   }
 
@@ -417,7 +428,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       isLandmark: true,
       landmarkName: 'Deep Subterranean Caves',
       dangerLevel: Math.min(5, Math.floor(px / 3) + 2),
-      description: 'A yawning fissure descending into deep subterranean strata teeming with mineral veins.'
+      description: 'A yawning fissure descending into deep subterranean strata teeming with mineral veins.',
+      spriteUrl: '/sprites/loc_mines.png'
     };
   }
 
@@ -427,11 +439,11 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
 
   if (px <= 1) {
     const orchardTiles = [
-      { glyph: '♣', color: '#22c55e', terrainType: 'Watervine Orchard', elevation: 'Valley' },
-      { glyph: '♠', color: '#15803d', terrainType: 'Cypress Copse', elevation: 'Foothills' },
-      { glyph: '¶', color: '#16a34a', terrainType: 'Ancient Fig Canopy', elevation: 'Lowlands' },
-      { glyph: '¥', color: '#86efac', terrainType: 'Watervine Field', elevation: 'Valley' },
-      { glyph: ',', color: '#4ade80', terrainType: 'Verdant Pasture', elevation: 'Meadow' }
+      { glyph: '♣', color: '#22c55e', terrainType: 'Watervine Orchard', elevation: 'Valley', spriteUrl: '/sprites/map_jungle.png' },
+      { glyph: '♠', color: '#15803d', terrainType: 'Cypress Copse', elevation: 'Foothills', spriteUrl: '/sprites/map_jungle.png' },
+      { glyph: '¶', color: '#16a34a', terrainType: 'Ancient Fig Canopy', elevation: 'Lowlands', spriteUrl: '/sprites/map_jungle.png' },
+      { glyph: '¥', color: '#86efac', terrainType: 'Watervine Field', elevation: 'Valley', spriteUrl: '/sprites/map_flowers.png' },
+      { glyph: ',', color: '#4ade80', terrainType: 'Verdant Pasture', elevation: 'Meadow', spriteUrl: '/sprites/map_flowers.png' }
     ];
     const picked = orchardTiles[hash % orchardTiles.length];
     return {
@@ -443,16 +455,17 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'Homestead Orchards',
       isLandmark: false,
       dangerLevel: 1,
-      description: 'Quiet agrarian valleys, rows of watervine, and secluded cedar orchards.'
+      description: 'Quiet agrarian valleys, rows of watervine, and secluded cedar orchards.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   if (px >= 2 && px <= 4 && py <= 2) {
     const wetlandTiles = [
-      { glyph: '≈', color: '#22d3ee', terrainType: 'Winding Creek Waters', elevation: 'Riverbed' },
-      { glyph: '~', color: '#06b6d4', terrainType: 'Misty Swamp Fen', elevation: 'Marshes' },
-      { glyph: '"', color: '#2dd4bf', terrainType: 'Brackish Salt Reeds', elevation: 'Bog' },
-      { glyph: ',', color: '#0e7490', terrainType: 'Silt Mudflats', elevation: 'Lowlands' }
+      { glyph: '≈', color: '#22d3ee', terrainType: 'Winding Creek Waters', elevation: 'Riverbed', spriteUrl: '/sprites/map_river.png' },
+      { glyph: '~', color: '#06b6d4', terrainType: 'Misty Swamp Fen', elevation: 'Marshes', spriteUrl: '/sprites/map_marsh.png' },
+      { glyph: '"', color: '#2dd4bf', terrainType: 'Brackish Salt Reeds', elevation: 'Bog', spriteUrl: '/sprites/map_marsh.png' },
+      { glyph: ',', color: '#0e7490', terrainType: 'Silt Mudflats', elevation: 'Lowlands', spriteUrl: '/sprites/map_river.png' }
     ];
     const picked = wetlandTiles[hash % wetlandTiles.length];
     return {
@@ -464,16 +477,17 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'Murky Creek Wetlands',
       isLandmark: false,
       dangerLevel: 2,
-      description: 'Eerie lowlands draped in spectral mist, brackish watercourses, and phasing undead.'
+      description: 'Eerie lowlands draped in spectral mist, brackish watercourses, and phasing undead.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   if (px >= 2 && px <= 5 && py >= 3) {
     const mountainTiles = [
-      { glyph: '▲', color: '#e2e8f0', terrainType: 'High Mountain Summit', elevation: 'High Peak' },
-      { glyph: '^', color: '#94a3b8', terrainType: 'Granite Ridge', elevation: 'Crags' },
-      { glyph: 'n', color: '#64748b', terrainType: 'Rugged Foothills', elevation: 'Foothills' },
-      { glyph: '⌂', color: '#cbd5e1', terrainType: 'Mountain Pass Altar', elevation: 'Pass' }
+      { glyph: '▲', color: '#e2e8f0', terrainType: 'High Mountain Summit', elevation: 'High Peak', spriteUrl: '/sprites/map_mountains.png' },
+      { glyph: '^', color: '#94a3b8', terrainType: 'Granite Ridge', elevation: 'Crags', spriteUrl: '/sprites/map_mountains.png' },
+      { glyph: 'n', color: '#64748b', terrainType: 'Rugged Foothills', elevation: 'Foothills', spriteUrl: '/sprites/map_canyon.png' },
+      { glyph: '⌂', color: '#cbd5e1', terrainType: 'Mountain Pass Altar', elevation: 'Pass', spriteUrl: '/sprites/map_mountains.png' }
     ];
     const picked = mountainTiles[hash % mountainTiles.length];
     return {
@@ -485,16 +499,17 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'Water Mountain Crags',
       isLandmark: false,
       dangerLevel: 2,
-      description: 'Towering granite pinnacles, knife-edge ridges, and the ancient Rainbow Altar.'
+      description: 'Towering granite pinnacles, knife-edge ridges, and the ancient Rainbow Altar.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   if (px >= 5 && px <= 7) {
     const boneTiles = [
-      { glyph: '%', color: '#e2e8f0', terrainType: 'Fossilized Ribcage Basin', elevation: 'Bone Wastes' },
-      { glyph: 'x', color: '#cbd5e1', terrainType: 'Calcified Scree', elevation: 'Badlands' },
-      { glyph: '░', color: '#94a3b8', terrainType: 'Sun-Bleached Bone Flats', elevation: 'Salt Flats' },
-      { glyph: '.', color: '#64748b', terrainType: 'Marrow Dust Plain', elevation: 'Desolation' }
+      { glyph: '%', color: '#e2e8f0', terrainType: 'Fossilized Ribcage Basin', elevation: 'Bone Wastes', spriteUrl: '/sprites/map_desert.png' },
+      { glyph: 'x', color: '#cbd5e1', terrainType: 'Calcified Scree', elevation: 'Badlands', spriteUrl: '/sprites/map_desert.png' },
+      { glyph: '░', color: '#94a3b8', terrainType: 'Sun-Bleached Bone Flats', elevation: 'Salt Flats', spriteUrl: '/sprites/map_desert.png' },
+      { glyph: '.', color: '#64748b', terrainType: 'Marrow Dust Plain', elevation: 'Desolation', spriteUrl: '/sprites/map_monolith.png' }
     ];
     const picked = boneTiles[hash % boneTiles.length];
     return {
@@ -506,16 +521,17 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'Calcified Bone Wastes',
       isLandmark: false,
       dangerLevel: 3,
-      description: 'A bleached landscape of titan bones, dry ravines, and roaming skeleton legions.'
+      description: 'A bleached landscape of titan bones, dry ravines, and roaming skeleton legions.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   if (px >= 8 && px <= 10 && py <= 4) {
     const sulfurTiles = [
-      { glyph: '*', color: '#facc15', terrainType: 'Sulfur Fumarole Bed', elevation: 'Vents' },
-      { glyph: '!', color: '#f97316', terrainType: 'Brimstone Geysers', elevation: 'Geysers' },
-      { glyph: '^', color: '#eab308', terrainType: 'Basalt Ash Crags', elevation: 'Crags' },
-      { glyph: '~', color: '#d97706', terrainType: 'Scorched Ash Dunes', elevation: 'Dunes' }
+      { glyph: '*', color: '#facc15', terrainType: 'Sulfur Fumarole Bed', elevation: 'Vents', spriteUrl: '/sprites/map_desert.png' },
+      { glyph: '!', color: '#f97316', terrainType: 'Brimstone Geysers', elevation: 'Geysers', spriteUrl: '/sprites/map_canyon.png' },
+      { glyph: '^', color: '#eab308', terrainType: 'Basalt Ash Crags', elevation: 'Crags', spriteUrl: '/sprites/map_canyon.png' },
+      { glyph: '~', color: '#d97706', terrainType: 'Scorched Ash Dunes', elevation: 'Dunes', spriteUrl: '/sprites/map_desert.png' }
     ];
     const picked = sulfurTiles[hash % sulfurTiles.length];
     return {
@@ -527,16 +543,17 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'Sulfur Plains',
       isLandmark: false,
       dangerLevel: 4,
-      description: 'Acrid fumes, boiling sulfur pits, and exploding creeper warrens.'
+      description: 'Acrid fumes, boiling sulfur pits, and exploding creeper warrens.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   if (px >= 8 && px <= 10 && py >= 5) {
     const rustTiles = [
-      { glyph: '‡', color: '#38bdf8', terrainType: 'High-Voltage Pylon', elevation: 'Conduits' },
-      { glyph: '|', color: '#0284c7', terrainType: 'Plasma Conduit Pipe', elevation: 'Pipeline' },
-      { glyph: '■', color: '#06b6d4', terrainType: 'Transformer Substation', elevation: 'Substation' },
-      { glyph: '☼', color: '#67e8f9', terrainType: 'Humming Dynamo Array', elevation: 'Power Core' }
+      { glyph: '‡', color: '#38bdf8', terrainType: 'High-Voltage Pylon', elevation: 'Conduits', spriteUrl: '/sprites/map_shrine.png' },
+      { glyph: '|', color: '#0284c7', terrainType: 'Plasma Conduit Pipe', elevation: 'Pipeline', spriteUrl: '/sprites/map_shrine.png' },
+      { glyph: '■', color: '#06b6d4', terrainType: 'Transformer Substation', elevation: 'Substation', spriteUrl: '/sprites/map_ruins.png' },
+      { glyph: '☼', color: '#67e8f9', terrainType: 'Humming Dynamo Array', elevation: 'Power Core', spriteUrl: '/sprites/map_shrine.png' }
     ];
     const picked = rustTiles[hash % rustTiles.length];
     return {
@@ -548,16 +565,17 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'The Rust Complex',
       isLandmark: false,
       dangerLevel: 4,
-      description: 'Industrial tech complexes, humming turbines, and rogue security automatons.'
+      description: 'Industrial tech complexes, humming turbines, and rogue security automatons.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   if (px >= 11 && px <= 13) {
     const megalithTiles = [
-      { glyph: 'Ω', color: '#fbbf24', terrainType: 'Ancient Megalith Arch', elevation: 'Megalith' },
-      { glyph: 'π', color: '#f59e0b', terrainType: 'Weathered Colonnade', elevation: 'Ruins' },
-      { glyph: 'П', color: '#d97706', terrainType: 'Gladiatorial Gateway', elevation: 'Gateway' },
-      { glyph: '░', color: '#b45309', terrainType: 'Shattered Mosaic Plaza', elevation: 'Arena Grounds' }
+      { glyph: 'Ω', color: '#fbbf24', terrainType: 'Ancient Megalith Arch', elevation: 'Megalith', spriteUrl: '/sprites/map_monolith.png' },
+      { glyph: 'π', color: '#f59e0b', terrainType: 'Weathered Colonnade', elevation: 'Ruins', spriteUrl: '/sprites/map_ruins.png' },
+      { glyph: 'П', color: '#d97706', terrainType: 'Gladiatorial Gateway', elevation: 'Gateway', spriteUrl: '/sprites/map_monolith.png' },
+      { glyph: '░', color: '#b45309', terrainType: 'Shattered Mosaic Plaza', elevation: 'Arena Grounds', spriteUrl: '/sprites/map_ruins.png' }
     ];
     const picked = megalithTiles[hash % megalithTiles.length];
     return {
@@ -569,15 +587,16 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
       biomeName: 'Colosseum Megaliths',
       isLandmark: false,
       dangerLevel: 5,
-      description: 'Towering cyclopean megaliths, crumbling amphitheaters, and the Rock King.'
+      description: 'Towering cyclopean megaliths, crumbling amphitheaters, and the Rock King.',
+      spriteUrl: picked.spriteUrl
     };
   }
 
   const voidTiles = [
-    { glyph: '✦', color: '#c084fc', terrainType: 'Celestial Star Formation', elevation: 'Cosmic Spire' },
-    { glyph: '✧', color: '#e879f9', terrainType: 'Pulsar Beacon Rift', elevation: 'Nexus' },
-    { glyph: '*', color: '#a855f7', terrainType: 'Stellar Nebular Veil', elevation: 'Nebula' },
-    { glyph: '·', color: '#6b21a8', terrainType: 'Deep Event Horizon', elevation: 'Void' }
+    { glyph: '✦', color: '#c084fc', terrainType: 'Celestial Star Formation', elevation: 'Cosmic Spire', spriteUrl: '/sprites/map_deep_jungle.png' },
+    { glyph: '✧', color: '#e879f9', terrainType: 'Pulsar Beacon Rift', elevation: 'Nexus', spriteUrl: '/sprites/map_shrine.png' },
+    { glyph: '*', color: '#a855f7', terrainType: 'Stellar Nebular Veil', elevation: 'Nebula', spriteUrl: '/sprites/map_deep_jungle.png' },
+    { glyph: '·', color: '#6b21a8', terrainType: 'Deep Event Horizon', elevation: 'Void', spriteUrl: '/sprites/map_monolith.png' }
   ];
   const picked = voidTiles[hash % voidTiles.length];
   return {
@@ -589,7 +608,8 @@ export function getParsecTerrainInfo(px: number, py: number): ParsecTerrainInfo 
     biomeName: 'Astral Void',
     isLandmark: false,
     dangerLevel: 6,
-    description: 'Dimensional boundary where space fractures and the Nether Titan holds Cooper.'
+    description: 'Dimensional boundary where space fractures and the Nether Titan holds Cooper.',
+    spriteUrl: picked.spriteUrl
   };
 }
 
@@ -815,11 +835,14 @@ export class WorldMapManager {
 
       inspector.innerHTML = `
         <div class="qud-terrain-info-left">
-          <span class="qud-inspector-coord">[PARSEC ${targetPx.toString().padStart(2, '0')}, ${targetPy.toString().padStart(2, '0')}]</span>
-          <span class="qud-inspector-name" style="color: ${info.color}; font-weight: bold;">${info.landmarkName || info.biomeName}</span>
-          <span class="qud-inspector-meta">• Terrain: ${info.terrainType} (${info.elevation})</span>
-          <span class="qud-inspector-danger">• Danger: Lvl ${info.dangerLevel}</span>
-          ${isHeroHere ? '<span class="qud-inspector-here" style="color: var(--cyan); font-weight: bold;">[@ YOU ARE HERE]</span>' : ''}
+          <img class="qud-inspector-thumb" src="${info.spriteUrl}" alt="${info.terrainType}" />
+          <div class="qud-inspector-text">
+            <span class="qud-inspector-coord">[PARSEC ${targetPx.toString().padStart(2, '0')}, ${targetPy.toString().padStart(2, '0')}]</span>
+            <span class="qud-inspector-name" style="color: ${info.color}; font-weight: bold;">${info.landmarkName || info.biomeName}</span>
+            <span class="qud-inspector-meta">• Terrain: ${info.terrainType} (${info.elevation})</span>
+            <span class="qud-inspector-danger">• Danger: Lvl ${info.dangerLevel}</span>
+            ${isHeroHere ? '<span class="qud-inspector-here" style="color: var(--cyan); font-weight: bold;">[@ YOU ARE HERE]</span>' : ''}
+          </div>
         </div>
         <div class="qud-terrain-info-right" style="font-size: 11px; color: #8899aa;">
           [T / ENTER] Embark
@@ -845,7 +868,13 @@ export class WorldMapManager {
         tile.style.color = isCurrent ? '#00ffff' : terrain.color;
         tile.title = `${terrain.landmarkName || terrain.terrainType} [Parsec (${px}, ${py})]`;
 
-        tile.innerHTML = `<span class="qud-terrain-glyph ${isCurrent ? 'hero-marker' : ''}">${isCurrent ? '@' : terrain.glyph}</span>`;
+        tile.innerHTML = `
+          <img class="qud-terrain-tile-img" src="${terrain.spriteUrl}" alt="${terrain.terrainType}" />
+          ${isCurrent ? '<div class="qud-hero-overland-badge">@</div>' : ''}
+          ${terrain.isLandmark && !isCurrent ? '<div class="qud-landmark-poi-badge">★</div>' : ''}
+          <div class="bracket-l">[</div>
+          <div class="bracket-r">]</div>
+        `;
 
         tile.addEventListener('mouseenter', () => updateInspector(px, py));
         tile.addEventListener('mouseleave', () => updateInspector(this.selectedParsec.px, this.selectedParsec.py));
@@ -931,28 +960,24 @@ export class WorldMapManager {
         top.appendChild(coordTxt);
         top.appendChild(badge);
 
-        // Center ASCII symbol
+        // Center graphical tile / sprite
         const glyphDiv = document.createElement('div');
         glyphDiv.className = 'subscreen-glyph';
-        let glyphChar = parsecTerrain.glyph;
-        let glyphColor = parsecTerrain.color;
-
-        if (isCurrent) {
-          glyphChar = '@';
-          glyphColor = 'var(--cyan)';
-        } else if (milestone) {
-          glyphChar = parsecTerrain.glyph;
-          glyphColor = 'var(--amber-bright)';
+        let subSprite = parsecTerrain.spriteUrl;
+        if (milestone) {
+          subSprite = milestone.sprite;
         } else if (zx === 1 && zy === 1 && isRuinsParsec(px, py)) {
-          glyphChar = 'π';
-          glyphColor = '#2dd4bf';
+          subSprite = '/sprites/map_ruins.png';
         } else if (zx === 1 && zy === 1 && isCaveParsec(px, py)) {
-          glyphChar = '▼';
-          glyphColor = '#c084fc';
+          subSprite = '/sprites/loc_mines.png';
         }
 
-        glyphDiv.textContent = glyphChar;
-        glyphDiv.style.color = glyphColor;
+        glyphDiv.innerHTML = `
+          <div class="subscreen-tile-wrapper">
+            <img class="subscreen-tile-img" src="${subSprite}" alt="Screen (${zx}, ${zy})" />
+            ${isCurrent ? '<span class="subscreen-hero-badge">@</span>' : ''}
+          </div>
+        `;
 
         // Title
         const title = document.createElement('div');
@@ -1130,7 +1155,7 @@ export class WorldMapManager {
       this.detailEnemiesEl.textContent = milestone.boss ? `${milestone.boss} (Boss), ${milestone.enemies.join(', ')}` : milestone.enemies.join(', ');
     } else {
       // Procedural wilderness screen
-      this.detailSpriteEl.src = '/sprites/loc_creek.png';
+      this.detailSpriteEl.src = parsecTerrain.spriteUrl;
       this.detailNameEl.textContent = `${biome.name} Wilderness`;
       this.detailRegionEl.textContent = `Parsec (${px}, ${py}) • Screen (${zx}, ${zy}) of 9`;
       this.detailStatusEl.textContent = isCurrent ? '[@] YOU ARE CURRENTLY HERE' : `[TERRAIN] ${parsecTerrain.terrainType.toUpperCase()}`;

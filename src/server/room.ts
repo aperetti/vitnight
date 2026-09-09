@@ -346,6 +346,8 @@ export class GameRoom {
       e => this.engine.getZoneKey(e.zone) === key
     );
     const pacingMode = this.engine.getPacingModeForZone(coord);
+    const tileUpdates = zone.tileUpdates && zone.tileUpdates.length > 0 ? [...zone.tileUpdates] : undefined;
+    zone.tileUpdates = [];
 
     const updateMsg: ServerMessage = {
       type: 'WORLD_UPDATE',
@@ -355,7 +357,8 @@ export class GameRoom {
       projectiles: this.engine.projectiles,
       floatingTexts: this.engine.floatingTexts,
       pacingMode,
-      waveInfo: this.engine.getWaveInfo(coord)
+      waveInfo: this.engine.getWaveInfo(coord),
+      tileUpdates
     };
 
     // Clean consumed projectiles/floating text after broadcast

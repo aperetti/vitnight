@@ -211,6 +211,7 @@ export interface ZoneData {
   hasRuins?: boolean;
   hasCaveEntrance?: boolean;
   waveInfo?: WaveInfo;
+  tileUpdates?: { x: number; y: number; tile: Tile }[];
 }
 
 export interface Projectile {
@@ -275,7 +276,7 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { type: 'INIT_STATE'; hero: HeroRole; entityId: string; zone: ZoneData; pacingMode: PacingMode; tickRate: number; storyStage: StoryStage }
-  | { type: 'WORLD_UPDATE'; zoneCoord: ZoneCoord; entities: Entity[]; items: { x: number; y: number; item: Item }[]; projectiles: Projectile[]; floatingTexts: FloatingText[]; pacingMode: PacingMode; waveInfo?: WaveInfo }
+  | { type: 'WORLD_UPDATE'; zoneCoord: ZoneCoord; entities: Entity[]; items: { x: number; y: number; item: Item }[]; projectiles: Projectile[]; floatingTexts: FloatingText[]; pacingMode: PacingMode; waveInfo?: WaveInfo; tiles?: Tile[][]; tileUpdates?: { x: number; y: number; tile: Tile }[] }
   | { type: 'ZONE_CHANGED'; zone: ZoneData; pacingMode: PacingMode; waveInfo?: WaveInfo }
   | { type: 'COMBAT_LOG'; entry: CombatLogEntry }
   | { type: 'STORY_EVENT'; stage: StoryStage; dialogue?: DialogueBox; questTitle: string; questDesc: string }

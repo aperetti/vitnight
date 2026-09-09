@@ -55,17 +55,48 @@ describe('Expansive Parsecs & 3x3 Sub-Screen Map Architecture', () => {
         expect(zone.width).toBe(ZONE_WIDTH);
         expect(zone.height).toBe(ZONE_HEIGHT);
 
-        // Horizontal perimeter path at y = 13..14 must be walkable all the way across
-        for (let x = 0; x < ZONE_WIDTH; x++) {
-          expect(zone.tiles[13][x].walkable).toBe(true);
-          expect(zone.tiles[14][x].walkable).toBe(true);
+        // Verify cardinal border exits are open on all 4 edges
+        const westExits = zone.tiles.filter((row, y) => row[0].walkable);
+        const eastExits = zone.tiles.filter((row, y) => row[ZONE_WIDTH - 1].walkable);
+        const northExits = zone.tiles[0].filter((t, x) => t.walkable);
+        const southExits = zone.tiles[ZONE_HEIGHT - 1].filter((t, x) => t.walkable);
+
+        expect(westExits.length).toBeGreaterThanOrEqual(2);
+        expect(eastExits.length).toBeGreaterThanOrEqual(2);
+        expect(northExits.length).toBeGreaterThanOrEqual(2);
+        expect(southExits.length).toBeGreaterThanOrEqual(2);
+
+        // Verify full connectivity from West border to East border via BFS
+        const startY = zone.tiles.findIndex(row => row[0].walkable);
+        const visited: boolean[][] = Array.from({ length: ZONE_HEIGHT }, () => Array(ZONE_WIDTH).fill(false));
+        const queue: [number, number][] = [[0, startY]];
+        visited[startY][0] = true;
+
+        let reachedEast = false;
+        let reachedNorth = false;
+        let reachedSouth = false;
+
+        while (queue.length > 0) {
+          const [cx, cy] = queue.shift()!;
+          if (cx === ZONE_WIDTH - 1) reachedEast = true;
+          if (cy === 0) reachedNorth = true;
+          if (cy === ZONE_HEIGHT - 1) reachedSouth = true;
+
+          for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+            const nx = cx + dx;
+            const ny = cy + dy;
+            if (nx >= 0 && nx < ZONE_WIDTH && ny >= 0 && ny < ZONE_HEIGHT) {
+              if (!visited[ny][nx] && zone.tiles[ny][nx].walkable) {
+                visited[ny][nx] = true;
+                queue.push([nx, ny]);
+              }
+            }
+          }
         }
 
-        // Vertical perimeter path at x = 23..24 must be walkable all the way across
-        for (let y = 0; y < ZONE_HEIGHT; y++) {
-          expect(zone.tiles[y][23].walkable).toBe(true);
-          expect(zone.tiles[y][24].walkable).toBe(true);
-        }
+        expect(reachedEast).toBe(true);
+        expect(reachedNorth).toBe(true);
+        expect(reachedSouth).toBe(true);
       }
     }
   });
