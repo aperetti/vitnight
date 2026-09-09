@@ -3,3 +3,5 @@ dist/
 .venv/
 qud-wiki-temp/
 hagadias-temp/
+data/
+saves/

@@ -15,6 +15,9 @@
       <span id="hud-location" style="cursor: pointer; text-decoration: underline dotted;" title="Click to view World Overview Map [M]">Homestead Outpost</span>
       <span id="hud-wave" class="hud-wave-tag" style="margin-left: 10px; color: var(--fire-red); font-weight: bold;"></span>
       <span id="hud-pacing" class="pacing-turnbased" style="margin-left: 12px;">[TURN-BASED]</span>
+      <span id="hud-room-badge" class="hud-room-badge" style="margin-left: 12px; cursor: pointer; padding: 2px 8px; border: 1px solid #1a3328; background: #06120c; border-radius: 3px; font-size: 11px; color: var(--cyan); display: inline-flex; align-items: center; gap: 4px;" title="Click to copy Room URL">
+        Room: <strong id="hud-room-id" style="color: #fff;">...</strong> 📋
+      </span>
     </div>
     <div id="hud-quest-container">
       <span id="hud-quest-title">The Adventure Begins: </span>
@@ -309,9 +312,17 @@
           <strong>BEAU</strong><br/><span style="font-size: 11px;">Cryomancer Ice-Blaster</span>
         </button>
       </div>
-      <div style="font-size: 11px; color: #778899;">
-        Room: <input type="text" id="room-input" value="coopers-party" style="background: #020406; border: 1px solid #334455; color: #fff; padding: 4px 8px; font-family: monospace;" />
-        (Open this URL with the same room in another browser tab or device for instant co-op!)
+      <div style="font-size: 12px; color: #8899aa; margin-top: 12px; padding: 10px; background: #070d12; border: 1px solid #1a2a3a; border-radius: 4px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <label for="room-input" style="font-weight: bold; color: var(--boss-gold); white-space: nowrap;">Room:</label>
+          <input type="text" id="room-input" value="" style="flex: 1; background: #020406; border: 1px solid #334455; color: #00ffff; padding: 6px 10px; font-family: monospace; font-size: 13px; font-weight: bold;" />
+          <button id="btn-randomize-room" type="button" style="padding: 6px 10px; border: 1px solid var(--amber); background: #1a1505; color: var(--amber); font-size: 11px; cursor: pointer; border-radius: 3px;" title="Generate new random 5-word room string">🎲 Randomize</button>
+          <button id="btn-copy-room-link" type="button" style="padding: 6px 10px; border: 1px solid var(--cyan); background: #051820; color: var(--cyan); font-size: 11px; cursor: pointer; border-radius: 3px;" title="Copy shareable room URL to clipboard">📋 Copy URL</button>
+        </div>
+        <div style="font-size: 11px; color: #778899; word-break: break-all;">
+          🔗 Direct URL: <span id="room-url-preview" style="color: #99aabb; text-decoration: underline;">...</span>
+          <span style="display: block; margin-top: 4px; color: #556677;">Share this link with friends to explore together or return later to continue saved progress!</span>
+        </div>
       </div>
     </div>
   </div>

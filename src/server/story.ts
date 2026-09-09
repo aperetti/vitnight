@@ -205,4 +205,36 @@ export class StoryManager {
       questDesc: this.questDesc
     };
   }
+
+  public serialize(): any {
+    return {
+      stage: this.stage,
+      questTitle: this.questTitle,
+      questDesc: this.questDesc,
+      laserCrafted: this.laserCrafted,
+      whitehillKeyFound: this.whitehillKeyFound,
+      zombieCreekCleared: this.zombieCreekCleared,
+      rainbowPiecesPlaced: [...this.rainbowPiecesPlaced],
+      skeletonHomesteadClaimed: this.skeletonHomesteadClaimed,
+      mutantSkeletonKilled: this.mutantSkeletonKilled,
+      creeperHomesteadCleared: this.creeperHomesteadCleared,
+      mutantCreeperShieldBroken: this.mutantCreeperShieldBroken,
+      mutantCreeperKilled: this.mutantCreeperKilled,
+      powerDownCleared: this.powerDownCleared,
+      rockyDoomSwarmTriggered: this.rockyDoomSwarmTriggered,
+      rockKingSlapWiped: this.rockKingSlapWiped,
+      rockyDoomDualBossKilled: this.rockyDoomDualBossKilled,
+      beauDeparted: this.beauDeparted,
+      lutherDeparted: this.lutherDeparted,
+      soloBossesDefeated: this.soloBossesDefeated
+    };
+  }
+
+  public deserialize(data: any): void {
+    if (!data) return;
+    Object.assign(this, data);
+    if (data.rainbowPiecesPlaced && Array.isArray(data.rainbowPiecesPlaced)) {
+      this.rainbowPiecesPlaced = [...data.rainbowPiecesPlaced];
+    }
+  }
 }

@@ -8,6 +8,7 @@ import { CharacterSheetManager } from './charSheet';
 import { InventoryManager } from './inventory';
 import { HeroRole, ClientMessage, ServerMessage, ZoneData, Entity, ZoneCoord, StoryStage, WaveInfo, SkillDefinition } from '../shared/types';
 import { ZONE_WIDTH, ZONE_HEIGHT, SKILL_DEFINITIONS } from '../shared/constants';
+import { generateRandomRoomName, sanitizeRoomName } from '../shared/roomGenerator';
 
 class ClientApp {
   public renderer: GameRenderer;
@@ -64,9 +65,54 @@ class ClientApp {
   }
 
   private setupHeroSelectModal() {
+    // 1. Resolve room from URL query param, path (/room/:id or /r/:id), or hash
+    let resolvedRoom: string | null = null;
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get('room');
-    if (roomParam) this.roomId = roomParam;
+    if (roomParam) {
+      resolvedRoom = roomParam;
+    } else {
+      const pathMatch = window.location.pathname.match(/^\/(?:room|r)\/([^\/]+)/);
+      if (pathMatch) {
+        resolvedRoom = pathMatch[1];
+      } else if (window.location.hash) {
+        const hashMatch = window.location.hash.replace(/^#/, '');
+        if (hashMatch.startsWith('room=')) {
+          resolvedRoom = hashMatch.replace('room=', '');
+        } else if (hashMatch) {
+          resolvedRoom = hashMatch;
+        }
+      }
+    }
+
+    // 2. Generate a random 5-word hyphenated room string if none provided
+    if (resolvedRoom) {
+      this.roomId = sanitizeRoomName(resolvedRoom);
+    } else {
+      this.roomId = generateRandomRoomName();
+    }
+
+    this.syncRoomUrl();
+
+    // Hook room input and buttons
+    const roomInput = document.getElementById('room-input') as HTMLInputElement | null;
+    roomInput?.addEventListener('input', () => {
+      this.roomId = sanitizeRoomName(roomInput.value);
+      this.syncRoomUrl();
+    });
+
+    document.getElementById('btn-randomize-room')?.addEventListener('click', () => {
+      this.roomId = generateRandomRoomName();
+      this.syncRoomUrl();
+    });
+
+    document.getElementById('btn-copy-room-link')?.addEventListener('click', () => {
+      this.copyRoomUrl();
+    });
+
+    document.getElementById('hud-room-badge')?.addEventListener('click', () => {
+      this.copyRoomUrl();
+    });
 
     const heroParam = params.get('hero') as HeroRole | null;
     const modal = document.getElementById('hero-select-modal')!;
@@ -92,10 +138,71 @@ class ClientApp {
     }
   }
 
+  private syncRoomUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', this.roomId);
+    window.history.replaceState({}, '', url.toString());
+
+    const previewEl = document.getElementById('room-url-preview');
+    if (previewEl) {
+      previewEl.textContent = url.toString();
+    }
+
+    const roomInput = document.getElementById('room-input') as HTMLInputElement | null;
+    if (roomInput && roomInput.value !== this.roomId) {
+      roomInput.value = this.roomId;
+    }
+
+    const hudRoomId = document.getElementById('hud-room-id');
+    if (hudRoomId) {
+      hudRoomId.textContent = this.roomId;
+    }
+  }
+
+  private async copyRoomUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', this.roomId);
+    const fullUrl = url.toString();
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(fullUrl);
+      } else {
+        const input = document.createElement('input');
+        input.value = fullUrl;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+      }
+
+      const hudRoomId = document.getElementById('hud-room-id');
+      if (hudRoomId) {
+        const orig = hudRoomId.textContent;
+        hudRoomId.textContent = 'COPIED! ✓';
+        setTimeout(() => {
+          if (hudRoomId) hudRoomId.textContent = orig;
+        }, 1500);
+      }
+
+      const copyBtn = document.getElementById('btn-copy-room-link');
+      if (copyBtn) {
+        const orig = copyBtn.textContent;
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          if (copyBtn) copyBtn.textContent = orig;
+        }, 1500);
+      }
+    } catch (err) {
+      console.error('Failed to copy room url:', err);
+    }
+  }
+
   private joinGame(hero: HeroRole) {
     this.myHeroRole = hero;
     const roomInput = (document.getElementById('room-input') as HTMLInputElement)?.value;
-    if (roomInput) this.roomId = roomInput;
+    if (roomInput) this.roomId = sanitizeRoomName(roomInput);
+    this.syncRoomUrl();
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     // In dev mode with separate Vite server on :3000, connect to backend on :3001. In production, use current host.

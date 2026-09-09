@@ -33,6 +33,7 @@ import { calculateShatterExplosion, calculateKnockback, areLikeItems, combineLik
 import { stepCompanionBot } from './bots';
 import { getStartingEquipment, createItem, generateRandomLoot, calculateCarryWeight, calculateMaxCarryWeight, ITEM_TEMPLATES } from './items';
 import { findAStarPath, getHeroAggroRange, calculateHeroThreat } from '../shared/pathfinding';
+import type { RoomSaveData } from './storage';
 
 export class GameEngine {
   public zones: Map<string, ZoneData> = new Map();
@@ -3109,5 +3110,56 @@ export class GameEngine {
 
   public notifyZone(coord: ZoneCoord) {
     this.onStateChanged?.(coord);
+  }
+
+  public serializeState(roomId: string): RoomSaveData {
+    return {
+      version: 1,
+      roomId,
+      savedAt: Date.now(),
+      story: this.story.serialize(),
+      entities: Array.from(this.entities.entries()),
+      zones: Array.from(this.zones.entries()),
+      combatLogs: this.combatLogs.slice(-50),
+      tickRate: this.tickRate,
+      turnCount: this.turnCount
+    };
+  }
+
+  public loadState(data: RoomSaveData): boolean {
+    if (!data) return false;
+    try {
+      if (data.story) {
+        this.story.deserialize(data.story);
+      }
+      if (data.entities && Array.isArray(data.entities)) {
+        this.entities.clear();
+        for (const [id, entity] of data.entities) {
+          if (entity.isPlayer) {
+            entity.isBot = true;
+          }
+          this.entities.set(id, entity);
+        }
+      }
+      if (data.zones && Array.isArray(data.zones)) {
+        this.zones.clear();
+        for (const [key, zone] of data.zones) {
+          this.zones.set(key, zone);
+        }
+      }
+      if (data.combatLogs && Array.isArray(data.combatLogs)) {
+        this.combatLogs = [...data.combatLogs];
+      }
+      if (typeof data.tickRate === 'number') {
+        this.tickRate = data.tickRate;
+      }
+      if (typeof data.turnCount === 'number') {
+        this.turnCount = data.turnCount;
+      }
+      return true;
+    } catch (err) {
+      console.error('[GameEngine] Error in loadState:', err);
+      return false;
+    }
   }
 }

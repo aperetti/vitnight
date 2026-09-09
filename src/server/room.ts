@@ -1,22 +1,43 @@
 import { WebSocket } from 'ws';
 import { GameEngine } from './engine';
 import { HeroRole, ClientMessage, ServerMessage, ZoneCoord } from '../shared/types';
+import { loadRoom, saveRoom } from './storage';
+import { sanitizeRoomName } from '../shared/roomGenerator';
 
 export class GameRoom {
   public id: string;
   public engine: GameEngine;
   public clients: Map<WebSocket, { hero?: HeroRole; playerName?: string }> = new Map();
+  private saveDebounceTimer: NodeJS.Timeout | null = null;
+  private autoSaveInterval: NodeJS.Timeout | null = null;
+  private isDirty: boolean = false;
 
   constructor(id: string) {
-    this.id = id;
+    this.id = sanitizeRoomName(id);
     this.engine = new GameEngine();
 
-    // Hook engine events to broadcast
+    // Restore saved progress if it exists
+    const saved = loadRoom(this.id);
+    if (saved) {
+      this.engine.loadState(saved);
+      console.log(`[GameRoom] Restored saved progress for [${this.id}] (Story: ${this.engine.story.stage})`);
+    }
+
+    // Periodic auto-save every 20 seconds
+    this.autoSaveInterval = setInterval(() => {
+      if (this.isDirty) {
+        this.saveNow();
+      }
+    }, 20000);
+
+    // Hook engine events to broadcast and trigger saves
     this.engine.onStateChanged = (coord: ZoneCoord) => {
       this.broadcastZoneState(coord);
+      this.scheduleSave();
     };
 
     this.engine.onPlayerZoneChanged = (playerId: string, newZone, pacingMode) => {
+      this.scheduleSave();
       const player = this.engine.entities.get(playerId);
       if (!player) return;
       for (const [ws, data] of this.clients.entries()) {
@@ -36,6 +57,7 @@ export class GameRoom {
     };
 
     this.engine.onStoryEvent = (stage, questTitle, questDesc, dialogue) => {
+      this.saveNow(); // Immediate save on story progression milestones
       this.broadcast({
         type: 'STORY_EVENT',
         stage: stage as any,
@@ -46,6 +68,7 @@ export class GameRoom {
     };
 
     this.engine.onLevelUp = (hero, level, attributePoints, skillPoints) => {
+      this.saveNow(); // Immediate save on level up
       this.broadcast({
         type: 'LEVEL_UP_EVENT',
         hero,
@@ -57,6 +80,7 @@ export class GameRoom {
     };
 
     this.engine.onWorldTravelResult = (eventType, message, coord) => {
+      this.scheduleSave();
       this.broadcast({
         type: 'WORLD_TRAVEL_RESULT',
         eventType,
@@ -312,6 +336,7 @@ export class GameRoom {
     }
     this.clients.delete(ws);
     this.broadcastPartyUpdate();
+    this.saveNow();
   }
 
   public broadcastZoneState(coord: ZoneCoord) {
@@ -387,5 +412,36 @@ export class GameRoom {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(msg));
     }
+  }
+
+  public scheduleSave(delayMs: number = 1500) {
+    this.isDirty = true;
+    if (this.saveDebounceTimer) return;
+    this.saveDebounceTimer = setTimeout(() => {
+      this.saveDebounceTimer = null;
+      this.saveNow();
+    }, delayMs);
+  }
+
+  public saveNow() {
+    try {
+      const state = this.engine.serializeState(this.id);
+      saveRoom(this.id, state);
+      this.isDirty = false;
+    } catch (err) {
+      console.error(`[GameRoom] Error saving room [${this.id}]:`, err);
+    }
+  }
+
+  public destroy() {
+    if (this.saveDebounceTimer) {
+      clearTimeout(this.saveDebounceTimer);
+      this.saveDebounceTimer = null;
+    }
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+    }
+    this.saveNow();
   }
 }
