@@ -35,8 +35,6 @@
       <div id="hud-party">
         <!-- Party cards populated by UIManager -->
       </div>
-      <button id="btn-char-sheet" class="hud-char-btn" style="border-color: var(--boss-gold); color: var(--boss-gold); margin-left: 12px; font-weight: bold;" title="Character Sheet & Skills [C]">[C] Hero Skills</button>
-      <button id="btn-inventory-hud" class="hud-char-btn" style="border-color: var(--cyan); color: var(--cyan); margin-left: 8px; font-weight: bold;" title="Inventory & Equipment [I]">[I] Inventory</button>
     </div>
   </header>
 
@@ -398,6 +396,19 @@
         <button id="btn-reset-keys">Reset to Defaults</button>
         <button id="close-settings-btn" style="border-color: var(--amber);">Done</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal Overlay -->
+  <div id="game-over-modal" class="modal-overlay hidden" style="z-index: 1000; background: rgba(5, 7, 10, 0.95);">
+    <div class="modal-card" style="text-align: center; border-color: #ff3333; box-shadow: 0 0 30px rgba(255, 51, 51, 0.5); max-width: 480px; padding: 32px;">
+      <h1 style="color: #ff3333; font-family: 'Courier New', monospace; font-size: 32px; letter-spacing: 4px; margin-bottom: 12px; text-shadow: 0 0 10px #ff3333;">☠ GAME OVER ☠</h1>
+      <p style="color: #ccddee; font-size: 14px; margin-bottom: 8px;">All companions have collapsed in the perilous wasteland.</p>
+      <p style="color: #8899aa; font-size: 12px; margin-bottom: 24px;">Your expedition through the Homesteads has fallen.</p>
+      <div style="display: flex; justify-content: center; gap: 16px;">
+        <button id="btn-game-over-restart" class="btn primary" style="background: #ff3333; border-color: #ff6666; font-size: 14px; padding: 10px 24px; cursor: pointer; color: #ffffff; font-weight: bold;">[ Return to Start Screen ]</button>
+      </div>
+      <div id="game-over-countdown" style="margin-top: 16px; font-size: 11px; color: #8899aa;">Returning to start screen in 5s...</div>
     </div>
   </div>
 

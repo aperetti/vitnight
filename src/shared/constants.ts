@@ -171,7 +171,8 @@ export const RAINBOW_ORDER = ['red', 'orange', 'yellow', 'green', 'blue', 'purpl
 export const BASE_HERO_ATTRIBUTES: Record<HeroRole, Attributes> = {
   barrett: { str: 14, agi: 18, tou: 14, int: 16, wil: 12, ego: 14 },
   luther: { str: 18, agi: 12, tou: 18, int: 12, wil: 16, ego: 12 },
-  beau: { str: 12, agi: 14, tou: 14, int: 18, wil: 16, ego: 16 }
+  beau: { str: 12, agi: 14, tou: 14, int: 18, wil: 16, ego: 16 },
+  luca: { str: 10, agi: 14, tou: 12, int: 16, wil: 18, ego: 16 }
 };
 
 export const SKILL_DEFINITIONS: SkillDefinition[] = [
@@ -357,5 +358,16 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     spCost: 3,
     icon: '🔥',
     description: "Barrett's fireballs ignite targets in rolling infernos, burning adjacent foes and melting ice blocks into boiling steam."
+  },
+  {
+    id: 'kinetic_slam',
+    name: 'Kinetic Wand Slam',
+    category: 'powers',
+    type: 'active',
+    spCost: 2,
+    energyCost: 20,
+    cooldownTicks: 4,
+    icon: '🪄',
+    description: 'Kinetic Grav-Pulse: Uses a mystic wand to thrust a target mob 3 tiles backwards, violently slamming them into solid walls for massive collision damage and concussive stun!'
   }
 ];

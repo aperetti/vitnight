@@ -252,7 +252,7 @@ class ClientApp {
   private setupInputRouting() {
     this.input.onMove = (dx, dy) => {
       const myPlayer = this.getMyPlayer();
-      if (myPlayer?.isDowned) {
+      if (myPlayer?.isDowned && (myPlayer.hp === undefined || myPlayer.hp <= 0)) {
         this.addCombatLog('⚠️ You are DOWNED and cannot move! Press [Space / Wait] to hold on until companions revive you.', 'system');
         return;
       }
@@ -273,7 +273,7 @@ class ClientApp {
 
     this.input.onAction = (actionType) => {
       const myPlayer = this.getMyPlayer();
-      if (myPlayer?.isDowned && actionType !== 'wait') {
+      if (myPlayer?.isDowned && (myPlayer.hp === undefined || myPlayer.hp <= 0) && actionType !== 'wait') {
         this.addCombatLog('⚠️ You are DOWNED and incapacitated! Press [Space / Wait] to hold on.', 'system');
         return;
       }
@@ -363,7 +363,7 @@ class ClientApp {
 
     this.input.onPickupItem = () => {
       const myPlayer = this.getMyPlayer();
-      if (myPlayer?.isDowned) {
+      if (myPlayer?.isDowned && (myPlayer.hp === undefined || myPlayer.hp <= 0)) {
         this.addCombatLog('⚠️ You are DOWNED and cannot pick up items.', 'system');
         return;
       }
@@ -373,7 +373,7 @@ class ClientApp {
     this.input.onCastHotbarSkill = (slotIndex) => {
       const player = this.getMyPlayer();
       if (!player) return;
-      if (player.isDowned) {
+      if (player.isDowned && (player.hp === undefined || player.hp <= 0)) {
         this.addCombatLog('⚠️ You are DOWNED and cannot cast skills! Press [Space / Wait] to hold on.', 'system');
         return;
       }
@@ -388,7 +388,7 @@ class ClientApp {
 
     this.worldMap.onTravelRequested = (targetParsecX, targetParsecY, targetZoneX, targetZoneY) => {
       const myPlayer = this.getMyPlayer();
-      if (myPlayer?.isDowned) {
+      if (myPlayer?.isDowned && (myPlayer.hp === undefined || myPlayer.hp <= 0)) {
         this.addCombatLog('⚠️ You are DOWNED and cannot travel! Wait for companions to revive you.', 'system');
         return;
       }
@@ -436,7 +436,7 @@ class ClientApp {
 
     this.ui.onActionTriggered = (actionType: any) => {
       const myPlayer = this.getMyPlayer();
-      if (myPlayer?.isDowned && actionType !== 'wait') {
+      if (myPlayer?.isDowned && (myPlayer.hp === undefined || myPlayer.hp <= 0) && actionType !== 'wait') {
         this.addCombatLog('⚠️ You are DOWNED and incapacitated! Press [Space / Wait] to hold on.', 'system');
         return;
       }
@@ -575,7 +575,7 @@ class ClientApp {
 
   public startAimingAction(actionType: 'attack' | 'special') {
     const player = this.getMyPlayer();
-    if (!player || player.isDowned) return;
+    if (!player || (player.isDowned && (player.hp === undefined || player.hp <= 0))) return;
 
     // If already aiming the exact same action, confirm fire!
     if (this.isAiming && this.aimingAction?.type === 'action' && this.aimingAction.actionType === actionType) {
@@ -602,6 +602,10 @@ class ClientApp {
       } else if (player.role === 'barrett') {
         name = 'Laser Blaster';
         projectileType = 'laser';
+      } else if (player.role === 'luca') {
+        name = 'Kinetic Wand';
+        projectileType = 'laser';
+        range = 6;
       } else {
         name = "Luther's Laser Rifle";
         projectileType = 'laser';
@@ -615,6 +619,10 @@ class ClientApp {
         name = 'Blazing Fireball';
         projectileType = 'fireball';
         range = 10;
+      } else if (player.role === 'luca') {
+        name = 'Kinetic Wand Slam';
+        projectileType = 'target';
+        range = 5;
       }
     }
 
@@ -629,7 +637,7 @@ class ClientApp {
 
   public startAimingSkill(skillDef: SkillDefinition) {
     const player = this.getMyPlayer();
-    if (!player || player.isDowned) return;
+    if (!player || (player.isDowned && (player.hp === undefined || player.hp <= 0))) return;
 
     // Instant / self-centered skills activate directly
     if (['whirlwind', 'cryo_nova', 'restorative_mist'].includes(skillDef.id)) {
@@ -1213,10 +1221,11 @@ class ClientApp {
 
           const myPlayer = msg.entities.find(e => e.id === this.myEntityId);
           if (myPlayer) {
-            if (myPlayer.isDowned && this.isAiming) {
+            const isActuallyDowned = !!(myPlayer.isDowned && (myPlayer.hp === undefined || myPlayer.hp <= 0));
+            if (isActuallyDowned && this.isAiming) {
               this.cancelAiming();
             }
-            this.ui.setDownedBanner(!!myPlayer.isDowned);
+            this.ui.setDownedBanner(isActuallyDowned);
             this.worldMap.updatePlayerBonuses(myPlayer.runeBonuses, myPlayer.runesCollected);
             this.charSheet.updateEntity(myPlayer);
             this.inventory.update(myPlayer, msg.items);
@@ -1239,6 +1248,11 @@ class ClientApp {
             this.updateAimingVisuals();
           }
         }
+        break;
+      }
+
+      case 'GAME_OVER': {
+        this.handleGameOver(msg.reason);
         break;
       }
 
@@ -1331,6 +1345,45 @@ class ClientApp {
         break;
       }
     }
+  }
+
+  private handleGameOver(reason?: string) {
+    const modal = document.getElementById('game-over-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    this.renderer.triggerScreenShake(14, 800);
+    this.audio.music.pause();
+
+    const restartBtn = document.getElementById('btn-game-over-restart');
+    const countdownEl = document.getElementById('game-over-countdown');
+
+    const goToStartScreen = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('hero');
+      window.location.href = url.pathname + (url.search ? url.search : '');
+    };
+
+    if (restartBtn) {
+      restartBtn.onclick = () => {
+        goToStartScreen();
+      };
+    }
+
+    let secondsLeft = 5;
+    if (countdownEl) {
+      countdownEl.textContent = `Returning to start screen in ${secondsLeft}s...`;
+    }
+    const interval = setInterval(() => {
+      secondsLeft--;
+      if (countdownEl) {
+        countdownEl.textContent = `Returning to start screen in ${secondsLeft}s...`;
+      }
+      if (secondsLeft <= 0) {
+        clearInterval(interval);
+        goToStartScreen();
+      }
+    }, 1000);
   }
 
   private setupMusicUI() {

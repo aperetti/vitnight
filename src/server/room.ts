@@ -89,6 +89,25 @@ export class GameRoom {
       });
       this.broadcastPartyUpdate();
     };
+
+    this.engine.onGameOver = () => {
+      this.broadcast({
+        type: 'GAME_OVER',
+        reason: 'All heroes have fallen in the perilous wasteland!'
+      });
+    };
+
+    this.engine.onLucaRescued = (luca) => {
+      this.saveNow();
+      this.broadcastPartyUpdate();
+      this.broadcast({
+        type: 'STORY_EVENT',
+        stage: 'POWER_DOWN_CLEARED' as any,
+        questTitle: 'Chrono-Kineticist Liberated',
+        questDesc: 'Luca has been freed from the containment cage at Power Down and has joined the party!',
+        dialogue: "Luca: 'Thank the stars! The energy dampener was draining my kinetic field. My teleportation wand is yours to command!'"
+      });
+    };
   }
 
   public handleClientMessage(ws: WebSocket, msg: ClientMessage) {
@@ -391,7 +410,7 @@ export class GameRoom {
         name: h.name,
         hp: h.hp,
         maxHp: h.maxHp,
-        isDowned: !!h.isDowned,
+        isDowned: !!(h.isDowned && h.hp <= 0),
         zone: h.zone,
         isBot: !!h.isBot,
         level: h.level || 1,

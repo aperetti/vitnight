@@ -105,6 +105,18 @@ export const ITEM_TEMPLATES: Record<string, Omit<Item, 'id'>> = {
     energyBonus: 15,
     description: 'An esoteric glacial focus channeled with the biting chill of the upper fells.'
   },
+  kinetic_wand: {
+    name: 'Kinetic Resonance Wand',
+    type: 'weapon',
+    slot: 'weapon',
+    rarity: 'rare',
+    symbol: '/',
+    color: '#c084fc',
+    weight: 3.0,
+    atkBonus: 24,
+    energyBonus: 25,
+    description: 'A finely tuned resonance wand that channels kinetic waves to repel enemies and slam them into walls.'
+  },
   lightsaber: {
     name: 'Beam Light-Blade',
     type: 'weapon',
@@ -503,8 +515,7 @@ export function getStartingEquipment(role: HeroRole): { equipment: EquipmentSlot
         createItem('thermal_grenade', 1)
       ]
     };
-  } else {
-    // beau
+  } else if (role === 'beau') {
     return {
       equipment: {},
       inventory: [
@@ -514,6 +525,18 @@ export function getStartingEquipment(role: HeroRole): { equipment: EquipmentSlot
         createItem('stim_salve', 2),
         createItem('energy_cell', 2),
         createItem('cryo_capsule', 1)
+      ]
+    };
+  } else {
+    // luca
+    return {
+      equipment: {},
+      inventory: [
+        createItem('kinetic_wand'),
+        createItem('psionic_cowl'),
+        createItem('stim_salve', 2),
+        createItem('energy_cell', 2),
+        createItem('phasing_tonic', 1)
       ]
     };
   }

@@ -16,6 +16,7 @@ export class StoryManager {
   public mutantCreeperShieldBroken: boolean = false;
   public mutantCreeperKilled: boolean = false;
   public powerDownCleared: boolean = false;
+  public lucaRescued: boolean = false;
   public rockyDoomSwarmTriggered: boolean = false;
   public rockKingSlapWiped: boolean = false;
   public rockyDoomDualBossKilled: boolean = false;

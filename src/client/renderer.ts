@@ -67,17 +67,22 @@ export class GameRenderer {
   }
 
   public getSpriteUrlForEntity(entity: Entity): string | null {
-    if (entity.isPlayer) {
+    const name = (entity.name || '').toLowerCase();
+    const id = (entity.id || '').toLowerCase();
+    const sym = entity.symbol || '';
+
+    if (entity.isPlayer || entity.role) {
       if (entity.role === 'barrett') return '/sprites/hero_barrett.png';
       if (entity.role === 'luther') return '/sprites/hero_luther.png';
       if (entity.role === 'beau') return '/sprites/hero_beau.png';
+      if (entity.role === 'luca' || name.includes('luca')) return '/sprites/hero_luca.png';
       if (entity.role === 'cooper' || entity.name === 'Cooper') return '/sprites/hero_cooper.png';
       return '/sprites/hero_barrett.png';
     }
 
-    const name = (entity.name || '').toLowerCase();
-    const id = (entity.id || '').toLowerCase();
-    const sym = entity.symbol || '';
+    if (name.includes('luca') || id.includes('luca')) {
+      return '/sprites/hero_luca.png';
+    }
 
     // 1. Skeletons (Skeleton Archer, Vanguard, Legionnaire, Hound, Gladiator, Titan)
     if (
@@ -215,6 +220,7 @@ export class GameRenderer {
       '/sprites/hero_barrett.png',
       '/sprites/hero_luther.png',
       '/sprites/hero_beau.png',
+      '/sprites/hero_luca.png',
       '/sprites/hero_cooper.png',
       '/sprites/monster_ghost.png',
       '/sprites/monster_zombie.png',

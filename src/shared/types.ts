@@ -1,4 +1,4 @@
-export type HeroRole = 'barrett' | 'luther' | 'beau';
+export type HeroRole = 'barrett' | 'luther' | 'beau' | 'luca';
 
 export interface ZoneCoord {
   parasangX: number;
@@ -10,7 +10,7 @@ export interface ZoneCoord {
 
 export type PacingMode = 'turn_based' | 'real_time';
 
-export type StatusEffect = 'frozen' | 'burning' | 'downed' | 'shielded' | 'climbing' | 'lost' | 'phase';
+export type StatusEffect = 'frozen' | 'burning' | 'downed' | 'shielded' | 'climbing' | 'lost' | 'phase' | 'stunned';
 
 export interface Attributes {
   str: number; // Strength (melee damage, mining)
@@ -283,4 +283,5 @@ export type ServerMessage =
   | { type: 'LEVEL_RESET'; message: string }
   | { type: 'PARTY_UPDATE'; members: { role: HeroRole; name: string; hp: number; maxHp: number; isDowned: boolean; zone: ZoneCoord; isBot: boolean; level?: number; xp?: number; nextLevelXp?: number }[] }
   | { type: 'LEVEL_UP_EVENT'; hero: HeroRole; level: number; attributePoints: number; skillPoints: number }
-  | { type: 'WORLD_TRAVEL_RESULT'; eventType: 'normal' | 'lost' | 'found_ruins' | 'found_cave'; message: string; coord: ZoneCoord };
+  | { type: 'WORLD_TRAVEL_RESULT'; eventType: 'normal' | 'lost' | 'found_ruins' | 'found_cave'; message: string; coord: ZoneCoord }
+  | { type: 'GAME_OVER'; reason?: string };

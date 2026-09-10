@@ -510,6 +510,40 @@ function generatePowerDown(coord: ZoneCoord): ZoneData {
     item: { id: 'saber-3', name: 'Amber Lightsaber', type: 'weapon', symbol: SYMBOLS.lightsaber, color: COLORS.amberBright, description: 'Humming plasma energy blade for Rocky Doom.' }
   });
 
+  // High-Voltage Containment Cell (Luca's Cage)
+  for (let cy = 7; cy <= 9; cy++) {
+    for (let cx = 35; cx <= 37; cx++) {
+      tiles[cy][cx] = { type: 'floor', char: '·', color: '#38254f', walkable: true, transparent: true };
+    }
+  }
+  // Energy bars surrounding the cell
+  const cageCoords = [
+    { x: 34, y: 7 }, { x: 34, y: 8 }, { x: 34, y: 9 },
+    { x: 38, y: 7 }, { x: 38, y: 8 }, { x: 38, y: 9 },
+    { x: 35, y: 6 }, { x: 36, y: 6 }, { x: 37, y: 6 },
+    { x: 35, y: 10 }, { x: 36, y: 10 }, { x: 37, y: 10 }
+  ];
+  for (const c of cageCoords) {
+    tiles[c.y][c.x] = {
+      type: 'breakable_wall',
+      char: '░',
+      color: '#c084fc',
+      walkable: false,
+      transparent: true,
+      minable: true,
+      hp: 30,
+      maxHp: 30
+    };
+  }
+  // Cage Release Switch
+  tiles[8][39] = {
+    type: 'switch',
+    char: '☼',
+    color: '#c084fc',
+    walkable: false,
+    transparent: true
+  };
+
   // Exits
   tiles[14][0] = { type: 'floor', char: '<', color: COLORS.green, walkable: true, transparent: true };
   tiles[ZONE_HEIGHT - 1][24] = { type: 'floor', char: 'v', color: COLORS.fireRed, walkable: true, transparent: true };
@@ -1401,10 +1435,10 @@ export function generateProceduralWilderness(coord: ZoneCoord): ZoneData {
   ]);
 
   const finalName = hasRuins
-    ? `Forgotten Ruins of Qud [Parsec (${parasangX}, ${parasangY}), Screen (${zoneX}, ${zoneY})]`
+    ? `Forgotten Ruins of Qud`
     : hasCave
-    ? `Cavern Fissure Wilds [Parsec (${parasangX}, ${parasangY}), Screen (${zoneX}, ${zoneY})]`
-    : `${theme.name} ${archetypeName} [Parsec (${parasangX}, ${parasangY}), Screen (${zoneX}, ${zoneY})]`;
+    ? `Cavern Fissure Wilds`
+    : `${theme.name} ${archetypeName}`;
 
   return {
     coord,

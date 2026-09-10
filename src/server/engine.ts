@@ -51,6 +51,8 @@ export class GameEngine {
   public onPlayerZoneChanged?: (playerId: string, newZone: ZoneData, pacingMode: PacingMode) => void;
   public onLevelUp?: (hero: HeroRole, level: number, attributePoints: number, skillPoints: number) => void;
   public onWorldTravelResult?: (eventType: 'normal' | 'lost' | 'found_ruins' | 'found_cave', message: string, coord: ZoneCoord) => void;
+  public onGameOver?: () => void;
+  public onLucaRescued?: (luca: Entity) => void;
 
   private zoneRealTimeIntervals: Map<string, NodeJS.Timeout> = new Map();
 
@@ -62,6 +64,7 @@ export class GameEngine {
     this.getOrCreateZone({ parasangX: 0, parasangY: 0, zoneX: 0, zoneY: 0, depth: 1 }); // Legacy mines fallback
     this.getOrCreateZone({ parasangX: 0, parasangY: 0, zoneX: 1, zoneY: 0, depth: 0 }); // Zombie Creek
     this.getOrCreateZone({ parasangX: 0, parasangY: 0, zoneX: 1, zoneY: 1, depth: 0 }); // Water Mountain
+    this.getOrCreateZone({ parasangX: 9, parasangY: 6, zoneX: 1, zoneY: 1, depth: 0 }); // Power Down (Luca's cage)
 
     this.initHeroParty();
     this.spawnEnemiesForZone({ parasangX: 2, parasangY: 2, zoneX: 1, zoneY: 1, depth: 1 }); // Mines mobs
@@ -80,7 +83,262 @@ export class GameEngine {
       zone = generateZone(coord);
       this.zones.set(key, zone);
     }
+    if (this.isPowerDownZone(coord) && !this.story.lucaRescued && !this.entities.has('npc-luca-cage')) {
+      this.entities.set('npc-luca-cage', {
+        id: 'npc-luca-cage',
+        name: 'Luca (Trapped)',
+        role: 'luca',
+        x: 36,
+        y: 8,
+        zone: coord,
+        symbol: '@',
+        color: '#c084fc',
+        hp: 100,
+        maxHp: 100,
+        energy: 100,
+        maxEnergy: 100,
+        isPlayer: false,
+        isBot: false,
+        statusEffects: {},
+        inventory: [],
+        facing: { dx: 0, dy: 1 }
+      });
+    }
     return zone;
+  }
+
+  public isPowerDownZone(coord: ZoneCoord): boolean {
+    const { parasangX, parasangY, zoneX, zoneY, depth } = coord;
+    return depth === 0 && ((parasangX === 9 && parasangY === 6 && zoneX === 1 && zoneY === 1) || (parasangX === 1 && parasangY === 0 && zoneX === 2 && zoneY === 0));
+  }
+
+  public checkGameOver(): boolean {
+    if (this.story.rockKingSlapWiped) return false;
+    const heroes = Array.from(this.entities.values()).filter(e => e.isPlayer);
+    if (heroes.length === 0) return false;
+    const allDowned = heroes.every(h => h.isDowned || (h.hp !== undefined && h.hp <= 0));
+    if (allDowned) {
+      this.log(`💀 TOTAL PARTY WIPE! All heroes have fallen in battle!`, 'combat');
+      this.onGameOver?.();
+      return true;
+    }
+    return false;
+  }
+
+  public rescueLuca(rescuer?: Entity) {
+    if (this.story.lucaRescued) return;
+    this.story.lucaRescued = true;
+
+    // Remove trapped NPC if present
+    this.entities.delete('npc-luca-cage');
+
+    // Power down zone coord
+    const pdCoord: ZoneCoord = rescuer?.zone || { parasangX: 9, parasangY: 6, zoneX: 1, zoneY: 1, depth: 0 };
+    const zone = this.getOrCreateZone(pdCoord);
+    zone.tileUpdates = zone.tileUpdates || [];
+
+    // Turn cage bars into floor
+    const cageCoords = [
+      { x: 34, y: 7 }, { x: 34, y: 8 }, { x: 34, y: 9 },
+      { x: 38, y: 7 }, { x: 38, y: 8 }, { x: 38, y: 9 },
+      { x: 35, y: 6 }, { x: 36, y: 6 }, { x: 37, y: 6 },
+      { x: 35, y: 10 }, { x: 36, y: 10 }, { x: 37, y: 10 }
+    ];
+    for (const c of cageCoords) {
+      if (zone.tiles[c.y]?.[c.x]) {
+        zone.tiles[c.y][c.x] = {
+          type: 'floor',
+          char: '·',
+          color: '#38254f',
+          walkable: true,
+          transparent: true
+        };
+        zone.tileUpdates.push({ x: c.x, y: c.y, tile: zone.tiles[c.y][c.x] });
+      }
+    }
+
+    // Switch flipped appearance
+    if (zone.tiles[8]?.[39]) {
+      zone.tiles[8][39] = {
+        type: 'floor',
+        char: '✓',
+        color: COLORS.green,
+        walkable: true,
+        transparent: true
+      };
+      zone.tileUpdates.push({ x: 39, y: 8, tile: zone.tiles[8][39] });
+    }
+
+    // Create active Luca hero companion
+    const startGear = getStartingEquipment('luca');
+    startGear.equipment.weapon = createItem('kinetic_wand');
+    const heroLvl = rescuer?.level || 1;
+    const luca: Entity = {
+      id: 'hero-luca',
+      name: 'Luca the Chrono-Kineticist',
+      role: 'luca',
+      x: 36,
+      y: 8,
+      zone: pdCoord,
+      symbol: SYMBOLS.player,
+      color: '#c084fc',
+      hp: 100,
+      maxHp: 100,
+      energy: 100,
+      maxEnergy: 100,
+      isPlayer: true,
+      isBot: true, // Companion bot!
+      isDowned: false,
+      statusEffects: {},
+      inventory: combineLikeItems(startGear.inventory),
+      equipment: startGear.equipment,
+      skillCooldowns: {},
+      equippedSkills: ['kinetic_slam', 'phase_shift'],
+      facing: { dx: -1, dy: 0 },
+      level: heroLvl,
+      xp: 0,
+      nextLevelXp: heroLvl * 100,
+      attributePoints: 0,
+      skillPoints: 2,
+      attributes: { ...BASE_HERO_ATTRIBUTES.luca },
+      skillsLearned: ['kinetic_slam', 'phase_shift'],
+      runesCollected: [],
+      runeBonuses: { damage: 0, maxHp: 0, maxEnergy: 0, shield: 0 }
+    };
+    this.recalculateEntityStats(luca);
+    this.entities.set('hero-luca', luca);
+
+    this.log(`✨ LUCA RESCUED! "Thank the stars! The energy dampener was draining my kinetic field. My teleportation wand is yours to command!"`, 'story');
+    this.addFloatingText(36, 8, '✨ LUCA RESCUED! ✨', '#c084fc');
+    this.addFloatingText(36, 8, '✧ PHASE WAND CHARGED ✧', COLORS.bossGold);
+
+    this.onLucaRescued?.(luca);
+    this.notifyZone(pdCoord);
+  }
+
+  public executeTeleport(entity: Entity, targetX?: number, targetY?: number) {
+    const zone = this.getOrCreateZone(entity.zone);
+    let tx = targetX ?? Math.max(1, Math.min(zone.width - 2, entity.x + (Math.random() > 0.5 ? 3 : -3)));
+    let ty = targetY ?? Math.max(1, Math.min(zone.height - 2, entity.y + (Math.random() > 0.5 ? 3 : -3)));
+
+    if (!zone.tiles[ty]?.[tx]?.walkable || this.findEntityAt(entity.zone, tx, ty)) {
+      const valid: { x: number; y: number }[] = [];
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const nx = tx + dx;
+          const ny = ty + dy;
+          if (nx > 0 && nx < zone.width - 1 && ny > 0 && ny < zone.height - 1 && zone.tiles[ny]?.[nx]?.walkable && !this.findEntityAt(entity.zone, nx, ny)) {
+            valid.push({ x: nx, y: ny });
+          }
+        }
+      }
+      if (valid.length > 0) {
+        const spot = valid[Math.floor(Math.random() * valid.length)];
+        tx = spot.x;
+        ty = spot.y;
+      } else {
+        return;
+      }
+    }
+
+    entity.x = tx;
+    entity.y = ty;
+    this.addFloatingText(entity.x, entity.y, '✧ BLINK! ✧', '#c084fc');
+    this.log(`✧ ${entity.name} phase-teleports across space!`, 'combat');
+  }
+
+  public executeKineticSlam(attacker: Entity, targetX?: number, targetY?: number) {
+    const tx = targetX ?? (attacker.x + attacker.facing.dx * 2);
+    const ty = targetY ?? (attacker.y + attacker.facing.dy * 2);
+
+    let target = this.findEntityAt(attacker.zone, tx, ty);
+    if (!target || target.isPlayer) {
+      const enemies = Array.from(this.entities.values()).filter(
+        e => !e.isPlayer && e.hp > 0 && this.getZoneKey(e.zone) === this.getZoneKey(attacker.zone) && Math.hypot(e.x - attacker.x, e.y - attacker.y) <= 5.5
+      );
+      if (enemies.length > 0) {
+        enemies.sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty));
+        target = enemies[0];
+      }
+    }
+
+    if (!target || target.isPlayer) {
+      this.log(`${attacker.name}'s kinetic pulse ripples harmlessly through the air.`, 'combat');
+      return;
+    }
+
+    let pdx = Math.sign(target.x - attacker.x);
+    let pdy = Math.sign(target.y - attacker.y);
+    if (pdx === 0 && pdy === 0) {
+      pdx = attacker.facing.dx || 1;
+      pdy = attacker.facing.dy || 0;
+    }
+
+    const zone = this.getOrCreateZone(target.zone);
+    const initialDamage = 25 + (attacker.level || 1) * 3;
+    this.applyDamage(target, initialDamage, attacker);
+    this.addFloatingText(target.x, target.y, `⚡ KINETIC -${initialDamage}`, '#c084fc');
+    this.log(`🪄 ${attacker.name} fires a kinetic thrust from the Kinetic Wand at ${target.name}!`, 'combat');
+
+    if (target.hp <= 0) {
+      this.handleEntityDeath(target, attacker);
+      return;
+    }
+
+    // Thrust 3 tiles backwards and slam into walls!
+    for (let step = 0; step < 3; step++) {
+      const nextX = target.x + pdx;
+      const nextY = target.y + pdy;
+
+      const isOutOfBounds = nextX <= 0 || nextX >= zone.width - 1 || nextY <= 0 || nextY >= zone.height - 1;
+      const tile = !isOutOfBounds ? zone.tiles[nextY]?.[nextX] : undefined;
+      const isWall = isOutOfBounds || !tile || !tile.walkable;
+
+      if (isWall) {
+        // Wall slam collision!
+        const wallDamage = 45 + (attacker.level || 1) * 5;
+        this.applyDamage(target, wallDamage, attacker);
+        target.statusEffects.stunned = 3;
+        target.statusEffects.frozen = 2;
+        this.addFloatingText(target.x, target.y, `💥 WALL SLAM! -${wallDamage}`, COLORS.fireRed);
+        this.log(`💥 CRUNCH! ${target.name} violently slams into the wall, taking ${wallDamage} collision damage and becoming concussed!`, 'combat');
+
+        if (tile && tile.type === 'breakable_wall') {
+          tile.hp = (tile.hp || 30) - 25;
+          if (tile.hp <= 0) {
+            tile.type = 'floor';
+            tile.char = '·';
+            tile.color = COLORS.dust;
+            tile.walkable = true;
+            tile.transparent = true;
+            this.log(`The wall shattered from the violent kinetic impact!`, 'story');
+          }
+        }
+
+        if (target.hp <= 0) {
+          this.handleEntityDeath(target, attacker);
+        }
+        break;
+      }
+
+      const otherEnt = this.findEntityAt(target.zone, nextX, nextY);
+      if (otherEnt && otherEnt.id !== target.id) {
+        const colDamage = 30;
+        this.applyDamage(target, colDamage, attacker);
+        this.applyDamage(otherEnt, colDamage, attacker);
+        target.statusEffects.frozen = 2;
+        otherEnt.statusEffects.frozen = 2;
+        this.addFloatingText(target.x, target.y, `💥 IMPACT! -${colDamage}`, COLORS.fireRed);
+        this.addFloatingText(otherEnt.x, otherEnt.y, `💥 IMPACT! -${colDamage}`, COLORS.fireRed);
+        this.log(`💥 ${target.name} collided into ${otherEnt.name}! Both suffer ${colDamage} damage!`, 'combat');
+        if (target.hp <= 0) this.handleEntityDeath(target, attacker);
+        if (otherEnt.hp <= 0) this.handleEntityDeath(otherEnt, attacker);
+        break;
+      }
+
+      target.x = nextX;
+      target.y = nextY;
+    }
   }
 
   private initHeroParty() {
@@ -214,8 +472,12 @@ export class GameEngine {
     if (!player) return;
 
     if (player.isDowned) {
-      this.log(`${player.name} is downed and cannot move! Press [Wait / Space] to hold on.`, 'system');
-      return;
+      if (player.hp > 0) {
+        player.isDowned = false;
+      } else {
+        this.log(`${player.name} is downed and cannot move! Press [Wait / Space] to hold on.`, 'system');
+        return;
+      }
     }
 
     player.facing = { dx, dy };
@@ -343,13 +605,22 @@ export class GameEngine {
         this.handleVictorySwitch(player);
       }
 
+      // Check Power Down switch
+      if (tile.type === 'switch' && this.isPowerDownZone(player.zone)) {
+        this.rescueLuca(player);
+      }
+
       // Check altar pedestal on Water Mountain
       if (tile.type === 'altar') {
         this.handleAltarStep(player, tile);
       }
     } else {
-      // Unwalkable tile: player bumps into wall/obstacle to mine it!
-      this.executeBumpMine(player, zone, targetX, targetY, tile);
+      // Unwalkable tile: player bumps into wall/obstacle to mine it or switch
+      if (tile.type === 'switch' && this.isPowerDownZone(player.zone)) {
+        this.rescueLuca(player);
+      } else {
+        this.executeBumpMine(player, zone, targetX, targetY, tile);
+      }
     }
 
     // If zone is turn-based, step simulation once
@@ -365,17 +636,20 @@ export class GameEngine {
     if (!player) return;
 
     if (player.isDowned) {
-      if (actionType === 'wait') {
+      if (player.hp > 0) {
+        player.isDowned = false;
+      } else if (actionType === 'wait') {
         this.log(`${player.name} is downed and holds on, waiting for revival...`, 'combat');
         if (this.getPacingModeForZone(player.zone) === 'turn_based') {
           this.stepZoneSimulation(player.zone);
         } else {
           this.notifyZone(player.zone);
         }
+        return;
       } else {
         this.log(`${player.name} is incapacitated! Press [Space / Wait] to let your party revive you!`, 'system');
+        return;
       }
-      return;
     }
 
     if (player.isBot) {
@@ -531,11 +805,12 @@ export class GameEngine {
       }
     }
 
-    // 3. Check crafting workbench, altar pedestal, or victory switch
-    if (tile && (tile.type === 'workbench' || tile.type === 'victory_switch' || tile.type === 'altar')) {
+    // 3. Check crafting workbench, altar pedestal, switch, or victory switch
+    if (tile && (tile.type === 'workbench' || tile.type === 'victory_switch' || tile.type === 'altar' || tile.type === 'switch')) {
       if (dist <= 1.5) {
         if (tile.type === 'workbench') this.handleCraftingOrAltar(player, tile);
         else if (tile.type === 'altar') this.handleCraftingOrAltar(player, tile);
+        else if (tile.type === 'switch' && this.isPowerDownZone(player.zone)) this.rescueLuca(player);
         else this.handleVictorySwitch(player);
         if (this.getPacingModeForZone(player.zone) === 'turn_based') {
           this.stepZoneSimulation(player.zone);
@@ -545,6 +820,14 @@ export class GameEngine {
         return;
       } else {
         this.log(`${player.name} must stand adjacent to interact with that.`, 'system');
+        return;
+      }
+    }
+
+    // Check trapped Luca cage cell interaction
+    if (this.isPowerDownZone(player.zone) && !this.story.lucaRescued) {
+      if (targetX >= 34 && targetX <= 39 && targetY >= 6 && targetY <= 10 && dist <= 2.5) {
+        this.rescueLuca(player);
         return;
       }
     }
@@ -607,6 +890,14 @@ export class GameEngine {
       this.executeLutherRevive(bot);
       return;
     }
+    if (actionType === 'teleport') {
+      this.executeTeleport(bot, targetX, targetY);
+      return;
+    }
+    if (actionType === 'kinetic_slam') {
+      this.executeKineticSlam(bot, targetX, targetY);
+      return;
+    }
     if (actionType === 'special') {
       const tx = targetX ?? bot.x + bot.facing.dx * 3;
       const ty = targetY ?? bot.y + bot.facing.dy * 3;
@@ -618,12 +909,18 @@ export class GameEngine {
         this.log(`Barrett launches a crackling fireball!`, 'combat');
       } else if (bot.role === 'luther') {
         this.executeLutherRevive(bot);
+      } else if (bot.role === 'luca') {
+        this.executeKineticSlam(bot, tx, ty);
       }
       return;
     }
     if (actionType === 'attack') {
       const tx = targetX ?? bot.x + bot.facing.dx;
       const ty = targetY ?? bot.y + bot.facing.dy;
+      if (bot.role === 'luca') {
+        this.executeKineticSlam(bot, tx, ty);
+        return;
+      }
       const enemy = this.findEntityAt(bot.zone, tx, ty);
       if (enemy && !enemy.isPlayer) {
         this.executeAttack(bot, enemy);
@@ -905,6 +1202,7 @@ export class GameEngine {
       entity.hp = entity.maxHp;
       entity.maxEnergy += 10;
       entity.energy = entity.maxEnergy;
+      entity.isDowned = false;
 
       entity.attributePoints = (entity.attributePoints || 0) + 1;
       const bonusSp = (entity.attributes?.int && entity.attributes.int >= 16) ? 3 : 2;
@@ -999,6 +1297,9 @@ export class GameEngine {
     } else if (entity.hp > entity.maxHp) {
       entity.hp = entity.maxHp;
     }
+    if (entity.hp && entity.hp > 0 && entity.isDowned) {
+      entity.isDowned = false;
+    }
 
     const prevMaxEnergy = entity.maxEnergy || 100;
     entity.maxEnergy = stats.maxEnergy;
@@ -1074,7 +1375,7 @@ export class GameEngine {
 
   public handleUseItem(playerId: string, itemId: string) {
     const player = this.entities.get(playerId);
-    if (!player || !player.isPlayer || player.isDowned) return;
+    if (!player || !player.isPlayer) return;
 
     const itemIdx = player.inventory.findIndex(it => it.id === itemId);
     if (itemIdx === -1) {
@@ -1082,6 +1383,10 @@ export class GameEngine {
       return;
     }
     const item = player.inventory[itemIdx];
+    if (player.isDowned && !item.healHp) {
+      this.log(`${player.name} is downed and cannot use that item!`, 'system');
+      return;
+    }
     const isTinkerer = player.skillsLearned?.includes('tinkering');
     const mult = isTinkerer ? 1.5 : 1;
 
@@ -1090,6 +1395,7 @@ export class GameEngine {
     if (item.healHp) {
       const healAmount = Math.floor(item.healHp * mult);
       player.hp = Math.min(player.maxHp, player.hp + healAmount);
+      if (player.hp > 0) player.isDowned = false;
       this.log(`💚 ${player.name} used ${item.name}, restoring ${healAmount} HP!`, 'combat');
       this.addFloatingText(player.x, player.y, `+${healAmount} HP`, COLORS.green);
       used = true;
@@ -1317,6 +1623,16 @@ export class GameEngine {
         const ty = targetY ?? (player.y + player.facing.dy * 3);
         this.fireProjectile(player, tx, ty, 'fireball');
         this.log(`☄️ CONCUSSIVE BLAST! ${player.name} launches an explosive concussive wave!`, 'combat');
+        break;
+      }
+
+      case 'kinetic_slam': {
+        this.executeKineticSlam(player, targetX, targetY);
+        break;
+      }
+
+      case 'teleport': {
+        this.executeTeleport(player, targetX, targetY);
         break;
       }
 
@@ -1965,7 +2281,10 @@ export class GameEngine {
   public executeBumpMine(player: Entity, zone: ZoneData, tx: number, ty: number, tile: Tile): boolean {
     if (tile.walkable) return false;
     // Don't mine interactables
-    if (tile.type === 'workbench' || tile.type === 'altar' || tile.type === 'victory_switch' || tile.type === 'shield') {
+    if (tile.type === 'workbench' || tile.type === 'altar' || tile.type === 'victory_switch' || tile.type === 'shield' || tile.type === 'switch') {
+      if (tile.type === 'switch' && this.isPowerDownZone(player.zone)) {
+        this.rescueLuca(player);
+      }
       return false;
     }
 
@@ -2037,6 +2356,13 @@ export class GameEngine {
       // Award mining XP
       const xpAward = 15 * ((tile.requiredTier || 1) + 1);
       this.awardPartyExperience(xpAward);
+
+      // Check if broke cage bar in Power Down
+      if (this.isPowerDownZone(player.zone) && !this.story.lucaRescued) {
+        if (tx >= 34 && tx <= 38 && ty >= 6 && ty <= 10) {
+          this.rescueLuca(player);
+        }
+      }
     } else {
       this.log(`${player.name} strikes the ${tile.oreName || 'rock wall'} with ${tool.name} for ${digDmg} dig damage! (${tile.hp}/${tile.maxHp} HP)`, 'combat');
     }
@@ -2191,6 +2517,7 @@ export class GameEngine {
       entity.hp = 0;
       this.log(`HERO DOWN! ${entity.name} collapsed! Luther must revive them with a healing potion!`, 'story');
       this.addFloatingText(entity.x, entity.y, 'DOWNED!', COLORS.fireRed);
+      this.checkGameOver();
       return;
     }
 
@@ -2678,6 +3005,28 @@ export class GameEngine {
     // Safe spawn house
     if (parasangX === 0 && parasangY === 0 && zoneX === 0 && zoneY === 0 && depth === 0) {
       return;
+    }
+
+    if (this.isPowerDownZone(coord) && !this.story.lucaRescued && !this.entities.has('npc-luca-cage')) {
+      this.entities.set('npc-luca-cage', {
+        id: 'npc-luca-cage',
+        name: 'Luca (Trapped)',
+        role: 'luca',
+        x: 36,
+        y: 8,
+        zone: coord,
+        symbol: '@',
+        color: '#c084fc',
+        hp: 100,
+        maxHp: 100,
+        energy: 100,
+        maxEnergy: 100,
+        isPlayer: false,
+        isBot: false,
+        statusEffects: {},
+        inventory: [],
+        facing: { dx: 0, dy: 1 }
+      });
     }
 
     const key = this.getZoneKey(coord);

@@ -120,7 +120,7 @@ export class UIManager {
   }
 
   public updateHeader(locationName: string, pacingMode: PacingMode, tickRate: number) {
-    this.locationEl.textContent = locationName;
+    this.locationEl.textContent = locationName.replace(/\s*\[Parsec[^\]]+\]/g, '').trim();
     if (pacingMode === 'real_time') {
       this.pacingEl.textContent = `[REAL-TIME: ${tickRate} Hz]`;
       this.pacingEl.className = 'pacing-realtime';
@@ -138,8 +138,9 @@ export class UIManager {
   public updateParty(members: { role: HeroRole; name: string; hp: number; maxHp: number; isDowned: boolean; isBot: boolean }[]) {
     this.partyContainerEl.innerHTML = '';
     for (const m of members) {
+      const isActuallyDowned = !!(m.isDowned && m.hp <= 0);
       const card = document.createElement('div');
-      card.className = `party-card ${m.isDowned ? 'downed' : ''}`;
+      card.className = `party-card ${isActuallyDowned ? 'downed' : ''}`;
 
       const name = document.createElement('div');
       name.className = 'party-name';
@@ -156,7 +157,7 @@ export class UIManager {
 
       const hpTxt = document.createElement('div');
       hpTxt.className = 'party-hp-text';
-      hpTxt.textContent = m.isDowned ? 'DOWNED!' : `${m.hp}/${m.maxHp} HP`;
+      hpTxt.textContent = isActuallyDowned ? 'DOWNED!' : `${m.hp}/${m.maxHp} HP`;
 
       card.appendChild(name);
       card.appendChild(barContainer);

@@ -175,6 +175,7 @@ body {
 .hp-bar-fill.barrett { background: var(--amber-bright); }
 .hp-bar-fill.luther { background: var(--green); }
 .hp-bar-fill.beau { background: var(--cyan); }
+.hp-bar-fill.luca { background: #c084fc; box-shadow: 0 0 6px rgba(192, 132, 252, 0.6); }
 
 .party-hp-text {
   font-size: 10px;
@@ -674,7 +675,7 @@ button:hover {
   width: 100%;
   aspect-ratio: 16 / 7;
   user-select: none;
-  background: #000000;
+  background: #0f3b3a; /* Unified Caves of Qud overland slate-teal background */
 }
 
 .qud-terrain-cell {
@@ -692,6 +693,7 @@ button:hover {
   border-radius: 0; /* No rounded corners! */
   margin: 0;
   padding: 0;
+  background: #0f3b3a; /* Seamless continuous background matching sprites */
   transition: all 0.08s ease;
 }
 

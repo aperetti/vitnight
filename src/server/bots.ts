@@ -52,6 +52,41 @@ export function stepCompanionBot(
     const target = enemies[0];
     const dist = Math.hypot(target.x - bot.x, target.y - bot.y);
 
+    // Luca: AI that can teleport and uses a wand to kinetically move the mobs and slam them into walls!
+    if (bot.role === 'luca') {
+      // 1. If enemy is dangerously close (dist <= 2) or Luca is wounded: TELEPORT to tactical position!
+      if (dist <= 2 || (bot.hp < bot.maxHp * 0.45 && dist <= 4)) {
+        const candidateTiles: { x: number; y: number; score: number }[] = [];
+        for (let dy = -4; dy <= 4; dy++) {
+          for (let dx = -4; dx <= 4; dx++) {
+            const tx = bot.x + dx;
+            const ty = bot.y + dy;
+            const d = Math.hypot(dx, dy);
+            if (d >= 2.5 && d <= 4.5 && tx >= 1 && tx < zone.width - 1 && ty >= 1 && ty < zone.height - 1) {
+              const tile = zone.tiles[ty]?.[tx];
+              const occupied = allEntities.some(e => e.hp > 0 && e.x === tx && e.y === ty);
+              if (tile && tile.walkable && !occupied) {
+                const distToEnemy = Math.hypot(tx - target.x, ty - target.y);
+                if (distToEnemy >= 3 && distToEnemy <= 5) {
+                  candidateTiles.push({ x: tx, y: ty, score: distToEnemy });
+                }
+              }
+            }
+          }
+        }
+        if (candidateTiles.length > 0) {
+          candidateTiles.sort((a, b) => b.score - a.score);
+          const chosen = candidateTiles[0];
+          return { type: 'action', actionType: 'teleport', targetX: chosen.x, targetY: chosen.y };
+        }
+      }
+
+      // 2. Kinetic Wand Slam: within range 5, fire kinetic wave to thrust mob and slam against walls!
+      if (dist <= 5) {
+        return { type: 'action', actionType: 'kinetic_slam', targetX: target.x, targetY: target.y };
+      }
+    }
+
     // Barrett: If target is frozen, shoot fireball to trigger SHATTER explosion!
     if (bot.role === 'barrett' && target.statusEffects.frozen && dist <= 6) {
       return { type: 'action', actionType: 'special', targetX: target.x, targetY: target.y };
@@ -80,6 +115,13 @@ export function stepCompanionBot(
   const humanLeader = allEntities.find(e => e.isPlayer && !e.isBot && !e.isDowned);
   if (humanLeader) {
     const dist = Math.hypot(humanLeader.x - bot.x, humanLeader.y - bot.y);
+    if (bot.role === 'luca' && dist > 6) {
+      const blinkX = Math.max(1, Math.min(zone.width - 2, humanLeader.x + (Math.random() > 0.5 ? 2 : -2)));
+      const blinkY = Math.max(1, Math.min(zone.height - 2, humanLeader.y + (Math.random() > 0.5 ? 2 : -2)));
+      if (zone.tiles[blinkY]?.[blinkX]?.walkable && !allEntities.some(e => e.hp > 0 && e.x === blinkX && e.y === blinkY)) {
+        return { type: 'action', actionType: 'teleport', targetX: blinkX, targetY: blinkY };
+      }
+    }
     if (dist > 3) {
       const step = findBfsStep(bot.x, bot.y, humanLeader.x, humanLeader.y, zone, allEntities, true);
       if (step) {
