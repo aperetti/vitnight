@@ -79,9 +79,28 @@ export class UIManager {
       this.onCancelInteractionRequested?.();
     });
 
+    this.settingsModalEl.addEventListener('click', (e) => {
+      if (e.target === this.settingsModalEl) this.toggleSettingsModal(false);
+    });
+
+    this.interactionModalEl.addEventListener('click', (e) => {
+      if (e.target === this.interactionModalEl) {
+        this.hideInteractionModal();
+        this.onCancelInteractionRequested?.();
+      }
+    });
+
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !this.settingsModalEl.classList.contains('hidden')) {
-        this.toggleSettingsModal(false);
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        if (!this.settingsModalEl.classList.contains('hidden')) {
+          e.preventDefault();
+          this.toggleSettingsModal(false);
+        }
+        if (!this.interactionModalEl.classList.contains('hidden')) {
+          e.preventDefault();
+          this.hideInteractionModal();
+          this.onCancelInteractionRequested?.();
+        }
       }
     });
 

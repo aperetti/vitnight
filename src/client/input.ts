@@ -10,6 +10,7 @@ export class InputManager {
   public onToggleInventory?: () => void;
   public onPickupItem?: () => void;
   public onCastHotbarSkill?: (slotIndex: number) => void;
+  public onEscape?: () => boolean;
 
   public isLookMode: boolean = false;
   public onToggleLook?: () => void;
@@ -96,6 +97,38 @@ export class InputManager {
         e.preventDefault();
       }
 
+      // Escape key handler: works across all modals, windows, and active modes
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        if (e.repeat) return;
+        e.preventDefault();
+        this.stopHeldMovement();
+
+        if (this.rebindingAction) {
+          this.rebindingAction = null;
+          return;
+        }
+
+        if (document.activeElement && typeof (document.activeElement as HTMLElement).blur === 'function') {
+          (document.activeElement as HTMLElement).blur();
+        }
+
+        if (this.onEscape && this.onEscape()) {
+          return;
+        }
+
+        if (this.isAiming) {
+          this.onAimCancel?.();
+          return;
+        }
+
+        if (this.isLookMode) {
+          this.onExitLook?.();
+          return;
+        }
+
+        return;
+      }
+
       // Do not hijack typing if an input field is focused
       if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
         return;
@@ -130,7 +163,7 @@ export class InputManager {
 
       // Look Mode interception
       if (this.isLookMode) {
-        if (e.code === 'Escape') {
+        if (e.code === 'Escape' || e.key === 'Escape') {
           if (e.repeat) return;
           e.preventDefault();
           this.stopHeldMovement();
@@ -159,7 +192,7 @@ export class InputManager {
 
       // Aiming Mode interception (Laser rifle, Cryo ice blast, Fireballs, Skills)
       if (this.isAiming) {
-        if (e.code === 'Escape') {
+        if (e.code === 'Escape' || e.key === 'Escape') {
           if (e.repeat) return;
           e.preventDefault();
           this.stopHeldMovement();

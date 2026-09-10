@@ -25,6 +25,14 @@ export class CharacterSheetManager {
     this.modalEl.addEventListener('click', (e) => {
       if (e.target === this.modalEl) this.hide();
     });
+
+    // Close on Escape key
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'Escape' || e.code === 'Escape') && this.isOpen()) {
+        e.preventDefault();
+        this.hide();
+      }
+    });
   }
 
   public show() {

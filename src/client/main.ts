@@ -307,6 +307,20 @@ class ClientApp {
       this.exitLookMode();
     };
 
+    // Global Escape handling across all windows, modals, and modes
+    this.input.onEscape = () => {
+      return this.handleEscape();
+    };
+
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        if (this.handleEscape()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    });
+
     // World Map Overview bindings
     this.input.onToggleMap = () => {
       this.toggleWorldMap();
@@ -359,6 +373,10 @@ class ClientApp {
     };
 
     this.input.onToggleInventory = () => {
+      if (this.charSheet.isOpen()) this.charSheet.hide();
+      if (this.worldMap.isOpen()) this.worldMap.close();
+      if (this.isLooking) this.exitLookMode();
+      if (this.isAiming) this.cancelAiming();
       this.inventory.toggle();
     };
 
@@ -397,22 +415,42 @@ class ClientApp {
     };
 
     this.input.onTogglePartySheet = () => {
+      if (this.inventory.isOpen()) this.inventory.hide();
+      if (this.worldMap.isOpen()) this.worldMap.close();
+      if (this.isLooking) this.exitLookMode();
+      if (this.isAiming) this.cancelAiming();
       this.charSheet.toggle();
     };
 
     document.getElementById('btn-char-sheet')?.addEventListener('click', () => {
+      if (this.inventory.isOpen()) this.inventory.hide();
+      if (this.worldMap.isOpen()) this.worldMap.close();
+      if (this.isLooking) this.exitLookMode();
+      if (this.isAiming) this.cancelAiming();
       this.charSheet.toggle();
     });
 
     document.getElementById('btn-char')?.addEventListener('click', () => {
+      if (this.inventory.isOpen()) this.inventory.hide();
+      if (this.worldMap.isOpen()) this.worldMap.close();
+      if (this.isLooking) this.exitLookMode();
+      if (this.isAiming) this.cancelAiming();
       this.charSheet.toggle();
     });
 
     document.getElementById('btn-inventory-hud')?.addEventListener('click', () => {
+      if (this.charSheet.isOpen()) this.charSheet.hide();
+      if (this.worldMap.isOpen()) this.worldMap.close();
+      if (this.isLooking) this.exitLookMode();
+      if (this.isAiming) this.cancelAiming();
       this.inventory.toggle();
     });
 
     document.getElementById('btn-inv')?.addEventListener('click', () => {
+      if (this.charSheet.isOpen()) this.charSheet.hide();
+      if (this.worldMap.isOpen()) this.worldMap.close();
+      if (this.isLooking) this.exitLookMode();
+      if (this.isAiming) this.cancelAiming();
       this.inventory.toggle();
     });
 
@@ -527,6 +565,9 @@ class ClientApp {
 
   public enterLookMode(initialPos?: { x: number; y: number }) {
     if (this.isAiming) this.cancelAiming();
+    if (this.charSheet.isOpen()) this.charSheet.hide();
+    if (this.inventory.isOpen()) this.inventory.hide();
+    if (this.worldMap.isOpen()) this.worldMap.close();
     this.isLooking = true;
     this.input.isLookMode = true;
 
@@ -552,11 +593,76 @@ class ClientApp {
     this.ui.hideInteractionModal();
   }
 
+  public handleEscape(): boolean {
+    // 1. Interaction Modal (e.g. from Look inspection)
+    const interactionModal = document.getElementById('interaction-modal');
+    if (interactionModal && !interactionModal.classList.contains('hidden')) {
+      this.ui.hideInteractionModal();
+      return true;
+    }
+
+    // 2. Settings Modal
+    const settingsModal = document.getElementById('settings-modal');
+    if (settingsModal && !settingsModal.classList.contains('hidden')) {
+      this.ui.toggleSettingsModal(false);
+      return true;
+    }
+
+    // 3. World Map Modal
+    if (this.worldMap.isOpen()) {
+      this.worldMap.close();
+      return true;
+    }
+
+    // 4. Character Sheet / Skills Modal
+    if (this.charSheet.isOpen()) {
+      this.charSheet.hide();
+      return true;
+    }
+
+    // 5. Inventory & Equipment Modal
+    if (this.inventory.isOpen()) {
+      this.inventory.hide();
+      return true;
+    }
+
+    // 6. Story Dialogue Modal
+    const dialogueModal = document.getElementById('dialogue-modal');
+    if (dialogueModal && !dialogueModal.classList.contains('hidden')) {
+      dialogueModal.classList.add('hidden');
+      return true;
+    }
+
+    // 7. Travel Event Announcement Modal
+    const travelModal = document.getElementById('travel-event-modal');
+    if (travelModal && !travelModal.classList.contains('hidden')) {
+      travelModal.classList.add('hidden');
+      return true;
+    }
+
+    // 8. Tactical Aiming Mode
+    if (this.isAiming) {
+      this.cancelAiming();
+      return true;
+    }
+
+    // 9. Look Mode
+    if (this.isLooking || this.input.isLookMode) {
+      this.exitLookMode();
+      return true;
+    }
+
+    return false;
+  }
+
   public toggleWorldMap() {
     if (this.isAiming) this.cancelAiming();
     if (this.worldMap.isOpen()) {
       this.worldMap.close();
     } else {
+      if (this.charSheet.isOpen()) this.charSheet.hide();
+      if (this.inventory.isOpen()) this.inventory.hide();
+      if (this.isLooking) this.exitLookMode();
       if (this.currentZone) {
         this.worldMap.updateState(this.currentZone.coord, this.currentStoryStage, this.myHeroRole || 'barrett');
       }

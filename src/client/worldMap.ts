@@ -681,6 +681,19 @@ export class WorldMapManager {
     document.getElementById('close-world-map-btn')?.addEventListener('click', () => this.close());
     document.getElementById('world-map-done-btn')?.addEventListener('click', () => this.close());
 
+    // Close on backdrop click outside card
+    this.modalEl.addEventListener('click', (e) => {
+      if (e.target === this.modalEl) this.close();
+    });
+
+    // Close on Escape key
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'Escape' || e.code === 'Escape') && this.isOpen()) {
+        e.preventDefault();
+        this.close();
+      }
+    });
+
     document.getElementById('world-map-travel-btn')?.addEventListener('click', () => {
       this.embarkToSelected();
     });

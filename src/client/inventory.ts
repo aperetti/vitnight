@@ -27,6 +27,14 @@ export class InventoryManager {
       if (e.target === this.modalEl) this.hide();
     });
 
+    // Close on Escape key
+    window.addEventListener('keydown', (e) => {
+      if ((e.key === 'Escape' || e.code === 'Escape') && this.isOpen()) {
+        e.preventDefault();
+        this.hide();
+      }
+    });
+
     // Filter tabs
     const tabs: { id: string; filter: 'all' | 'equipment' | 'consumables' | 'materials' }[] = [
       { id: 'inv-tab-all', filter: 'all' },
