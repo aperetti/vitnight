@@ -70,6 +70,52 @@ body {
   font-weight: bold;
 }
 
+/* Background Music Player in HUD */
+.hud-music-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  padding: 2px 8px;
+  background: #071018;
+  border: 1px solid #1a3044;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.music-btn {
+  background: #0d2030;
+  color: var(--cyan);
+  border: 1px solid #224466;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.music-btn:hover {
+  background: #163650;
+  border-color: var(--cyan);
+}
+
+.hud-music-title {
+  color: #88aacc;
+  font-size: 11px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-music-vol {
+  width: 55px;
+  height: 4px;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
 #hud-quest-container {
   max-width: 400px;
   overflow: hidden;

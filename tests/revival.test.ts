@@ -68,7 +68,7 @@ describe('Player Downed State and Luther Revival', () => {
     expect(barrett.hp).toBe(60);
   });
 
-  it('allows downed player to crawl and advance simulation', () => {
+  it('prevents downed player from moving', () => {
     const engine = new GameEngine();
     const barrett = engine.entities.get('hero-barrett')!;
 
@@ -78,10 +78,11 @@ describe('Player Downed State and Luther Revival', () => {
     barrett.isDowned = true;
     barrett.hp = 0;
 
-    // Crawl East
+    // Attempt to move East while downed
     engine.handlePlayerMove('hero-barrett', 1, 0);
 
-    expect(barrett.x).toBe(11);
+    // Position must remain unchanged
+    expect(barrett.x).toBe(10);
     expect(barrett.y).toBe(12);
     expect(barrett.isDowned).toBe(true);
   });

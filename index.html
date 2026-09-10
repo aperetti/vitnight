@@ -18,6 +18,14 @@
       <span id="hud-room-badge" class="hud-room-badge" style="margin-left: 12px; cursor: pointer; padding: 2px 8px; border: 1px solid #1a3328; background: #06120c; border-radius: 3px; font-size: 11px; color: var(--cyan); display: inline-flex; align-items: center; gap: 4px;" title="Click to copy Room URL">
         Room: <strong id="hud-room-id" style="color: #fff;">...</strong> 📋
       </span>
+
+      <!-- Background Music Controls (Subterranean Echoes) -->
+      <div id="hud-music-ctrl" class="hud-music-ctrl" title="Ambient Soundtrack: Subterranean Echoes">
+        <button id="btn-music-toggle" class="music-btn" title="Toggle Music Play / Pause">🎵 <span id="hud-music-status">Play</span></button>
+        <span id="hud-music-title" class="hud-music-title" title="Current Ambient Track">Subterranean Echoes - Part I</span>
+        <button id="btn-music-next" class="music-btn" title="Next Ambient Track">⏭</button>
+        <input type="range" id="hud-music-vol" class="hud-music-vol" min="0" max="100" value="35" title="Music Volume" />
+      </div>
     </div>
     <div id="hud-quest-container">
       <span id="hud-quest-title">The Adventure Begins: </span>
@@ -36,7 +44,7 @@
   <main id="main-view">
     <div id="game-viewport">
       <div id="downed-banner" class="downed-banner hidden">
-        ⚠️ YOU ARE DOWNED! Press [Wait / Space] to hold on and let your companions reach and resurrect you!
+        ⚠️ YOU ARE DOWNED AND CANNOT MOVE! Press [Wait / Space] to hold on and let your companions reach and resurrect you!
       </div>
       <!-- Tactical Aiming Banner Overlay -->
       <div id="aiming-banner" class="aiming-banner hidden">
@@ -355,6 +363,27 @@
         <label for="tick-rate-slider">Co-op Real-Time Tick Rate:</label>
         <input type="range" id="tick-rate-slider" min="2" max="10" value="5" step="1" />
         <span id="tick-rate-val" style="color: var(--green); font-weight: bold; width: 100px; text-align: right;">5 Hz (200ms)</span>
+      </div>
+
+      <!-- Audio & Music Settings -->
+      <div style="font-size: 13px; font-weight: bold; color: var(--cyan); margin: 16px 0 8px; border-top: 1px solid #1a2a3a; padding-top: 12px;">AUDIO & AMBIENT MUSIC</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <label for="settings-music-enabled" style="font-size: 12px; color: #b8c8d8;">Background Music (Subterranean Echoes):</label>
+        <input type="checkbox" id="settings-music-enabled" checked style="cursor: pointer; transform: scale(1.2);" />
+      </div>
+      <div class="slider-group">
+        <label for="settings-music-vol">Music Volume:</label>
+        <input type="range" id="settings-music-vol" min="0" max="100" value="35" />
+        <span id="settings-music-vol-val" style="color: var(--cyan); font-weight: bold; width: 60px; text-align: right;">35%</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; margin-top: 8px;">
+        <label for="settings-sfx-enabled" style="font-size: 12px; color: #b8c8d8;">Sound Effects (Organic / Atmospheric):</label>
+        <input type="checkbox" id="settings-sfx-enabled" style="cursor: pointer; transform: scale(1.2);" />
+      </div>
+      <div class="slider-group">
+        <label for="settings-sfx-vol">SFX Volume:</label>
+        <input type="range" id="settings-sfx-vol" min="0" max="100" value="25" />
+        <span id="settings-sfx-vol-val" style="color: var(--amber); font-weight: bold; width: 60px; text-align: right;">25%</span>
       </div>
 
       <div class="sso-group">

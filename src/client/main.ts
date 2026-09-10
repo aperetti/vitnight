@@ -1,7 +1,7 @@
 import { GameRenderer } from './renderer';
 import { SettingsManager } from './settings';
 import { InputManager } from './input';
-import { SoundSynthesizer } from './audio';
+import { AudioManager } from './audio';
 import { UIManager } from './ui';
 import { WorldMapManager } from './worldMap';
 import { CharacterSheetManager } from './charSheet';
@@ -14,7 +14,7 @@ class ClientApp {
   public renderer: GameRenderer;
   public settings: SettingsManager;
   public input: InputManager;
-  public audio: SoundSynthesizer;
+  public audio: AudioManager;
   public ui: UIManager;
   public worldMap: WorldMapManager;
   public charSheet: CharacterSheetManager;
@@ -48,7 +48,7 @@ class ClientApp {
     this.renderer = new GameRenderer();
     this.settings = new SettingsManager();
     this.input = new InputManager(this.settings);
-    this.audio = new SoundSynthesizer();
+    this.audio = new AudioManager();
     this.ui = new UIManager(this.settings);
     this.worldMap = new WorldMapManager();
     this.charSheet = new CharacterSheetManager();
@@ -60,6 +60,7 @@ class ClientApp {
     await this.renderer.init(viewportEl);
 
     this.setupInputRouting();
+    this.setupMusicUI();
     this.setupMouseRouting();
     this.setupHeroSelectModal();
   }
@@ -119,20 +120,24 @@ class ClientApp {
 
     if (heroParam && ['barrett', 'luther', 'beau'].includes(heroParam)) {
       modal.classList.add('hidden');
+      this.audio.music.play().catch(() => {});
       this.joinGame(heroParam);
     } else {
       modal.classList.remove('hidden');
 
       document.getElementById('select-barrett')?.addEventListener('click', () => {
         modal.classList.add('hidden');
+        this.audio.music.play().catch(() => {});
         this.joinGame('barrett');
       });
       document.getElementById('select-luther')?.addEventListener('click', () => {
         modal.classList.add('hidden');
+        this.audio.music.play().catch(() => {});
         this.joinGame('luther');
       });
       document.getElementById('select-beau')?.addEventListener('click', () => {
         modal.classList.add('hidden');
+        this.audio.music.play().catch(() => {});
         this.joinGame('beau');
       });
     }
@@ -246,6 +251,11 @@ class ClientApp {
 
   private setupInputRouting() {
     this.input.onMove = (dx, dy) => {
+      const myPlayer = this.getMyPlayer();
+      if (myPlayer?.isDowned) {
+        this.addCombatLog('⚠️ You are DOWNED and cannot move! Press [Space / Wait] to hold on until companions revive you.', 'system');
+        return;
+      }
       this.sendMessage({ type: 'PLAYER_MOVE', dx, dy });
     };
 
@@ -262,6 +272,11 @@ class ClientApp {
     };
 
     this.input.onAction = (actionType) => {
+      const myPlayer = this.getMyPlayer();
+      if (myPlayer?.isDowned && actionType !== 'wait') {
+        this.addCombatLog('⚠️ You are DOWNED and incapacitated! Press [Space / Wait] to hold on.', 'system');
+        return;
+      }
       if (actionType === 'attack' || actionType === 'special') {
         this.startAimingAction(actionType);
       } else {
@@ -347,12 +362,21 @@ class ClientApp {
     };
 
     this.input.onPickupItem = () => {
+      const myPlayer = this.getMyPlayer();
+      if (myPlayer?.isDowned) {
+        this.addCombatLog('⚠️ You are DOWNED and cannot pick up items.', 'system');
+        return;
+      }
       this.sendMessage({ type: 'PICKUP_ITEM' });
     };
 
     this.input.onCastHotbarSkill = (slotIndex) => {
       const player = this.getMyPlayer();
       if (!player) return;
+      if (player.isDowned) {
+        this.addCombatLog('⚠️ You are DOWNED and cannot cast skills! Press [Space / Wait] to hold on.', 'system');
+        return;
+      }
       const activeSkills = (player.skillsLearned || [])
         .map(id => SKILL_DEFINITIONS.find(s => s.id === id))
         .filter((s): s is SkillDefinition => !!s && s.type === 'active');
@@ -363,6 +387,11 @@ class ClientApp {
     };
 
     this.worldMap.onTravelRequested = (targetParsecX, targetParsecY, targetZoneX, targetZoneY) => {
+      const myPlayer = this.getMyPlayer();
+      if (myPlayer?.isDowned) {
+        this.addCombatLog('⚠️ You are DOWNED and cannot travel! Wait for companions to revive you.', 'system');
+        return;
+      }
       this.sendMessage({ type: 'WORLD_MAP_TRAVEL', targetParsecX, targetParsecY, targetZoneX, targetZoneY });
     };
 
@@ -406,6 +435,11 @@ class ClientApp {
     };
 
     this.ui.onActionTriggered = (actionType: any) => {
+      const myPlayer = this.getMyPlayer();
+      if (myPlayer?.isDowned && actionType !== 'wait') {
+        this.addCombatLog('⚠️ You are DOWNED and incapacitated! Press [Space / Wait] to hold on.', 'system');
+        return;
+      }
       if (actionType === 'attack' || actionType === 'special') {
         this.startAimingAction(actionType);
       } else {
@@ -1272,7 +1306,7 @@ class ClientApp {
 
       case 'COMBAT_LOG': {
         this.ui.addLogEntry(msg.entry);
-        // Sound effects
+        // Sound effects (only play if enabled)
         if (msg.entry.text.includes('SHATTER EXPLOSION')) {
           this.audio.playShatterExplosion();
           this.renderer.triggerScreenShake(8, 300);
@@ -1297,6 +1331,86 @@ class ClientApp {
         break;
       }
     }
+  }
+
+  private setupMusicUI() {
+    const music = this.audio.music;
+    const toggleBtn = document.getElementById('btn-music-toggle');
+    const statusTxt = document.getElementById('hud-music-status');
+    const titleTxt = document.getElementById('hud-music-title');
+    const nextBtn = document.getElementById('btn-music-next');
+    const volSlider = document.getElementById('hud-music-vol') as HTMLInputElement | null;
+
+    const settingsMusicCheck = document.getElementById('settings-music-enabled') as HTMLInputElement | null;
+    const settingsMusicVol = document.getElementById('settings-music-vol') as HTMLInputElement | null;
+    const settingsMusicVolVal = document.getElementById('settings-music-vol-val');
+    const settingsSfxCheck = document.getElementById('settings-sfx-enabled') as HTMLInputElement | null;
+    const settingsSfxVol = document.getElementById('settings-sfx-vol') as HTMLInputElement | null;
+    const settingsSfxVolVal = document.getElementById('settings-sfx-vol-val');
+
+    // Sync initial controls from loaded state
+    if (volSlider) volSlider.value = String(Math.round(music.volume * 100));
+    if (settingsMusicVol) settingsMusicVol.value = String(Math.round(music.volume * 100));
+    if (settingsMusicVolVal) settingsMusicVolVal.textContent = `${Math.round(music.volume * 100)}%`;
+    if (settingsMusicCheck) settingsMusicCheck.checked = music.enabled;
+    if (settingsSfxCheck) settingsSfxCheck.checked = this.audio.sfx.enabled;
+    if (settingsSfxVol) settingsSfxVol.value = String(Math.round(this.audio.sfx.volume * 100));
+    if (settingsSfxVolVal) settingsSfxVolVal.textContent = `${Math.round(this.audio.sfx.volume * 100)}%`;
+
+    const updateDisplay = (track = music.getCurrentTrack(), isPlaying = music.isPlaying) => {
+      if (titleTxt) titleTxt.textContent = track.title;
+      if (statusTxt) statusTxt.textContent = isPlaying ? 'Pause' : 'Play';
+      if (toggleBtn) toggleBtn.title = isPlaying ? 'Pause Background Music' : 'Play Background Music';
+      if (settingsMusicCheck) settingsMusicCheck.checked = music.enabled;
+    };
+
+    updateDisplay();
+
+    music.onTrackChange = (track, isPlaying) => {
+      updateDisplay(track, isPlaying);
+    };
+
+    music.onStateChange = (isPlaying, volume) => {
+      updateDisplay(music.getCurrentTrack(), isPlaying);
+      if (volSlider) volSlider.value = String(Math.round(volume * 100));
+      if (settingsMusicVol) settingsMusicVol.value = String(Math.round(volume * 100));
+      if (settingsMusicVolVal) settingsMusicVolVal.textContent = `${Math.round(volume * 100)}%`;
+    };
+
+    toggleBtn?.addEventListener('click', () => {
+      music.togglePlayPause();
+    });
+
+    nextBtn?.addEventListener('click', () => {
+      music.nextTrack();
+    });
+
+    volSlider?.addEventListener('input', (e) => {
+      const val = Number((e.target as HTMLInputElement).value) / 100;
+      music.setVolume(val);
+    });
+
+    settingsMusicCheck?.addEventListener('change', (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      music.setEnabled(checked);
+    });
+
+    settingsMusicVol?.addEventListener('input', (e) => {
+      const val = Number((e.target as HTMLInputElement).value) / 100;
+      music.setVolume(val);
+      if (settingsMusicVolVal) settingsMusicVolVal.textContent = `${Math.round(val * 100)}%`;
+    });
+
+    settingsSfxCheck?.addEventListener('change', (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      this.audio.sfx.setEnabled(checked);
+    });
+
+    settingsSfxVol?.addEventListener('input', (e) => {
+      const val = Number((e.target as HTMLInputElement).value) / 100;
+      this.audio.sfx.setVolume(val);
+      if (settingsSfxVolVal) settingsSfxVolVal.textContent = `${Math.round(val * 100)}%`;
+    });
   }
 }
 

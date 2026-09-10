@@ -214,26 +214,7 @@ export class GameEngine {
     if (!player) return;
 
     if (player.isDowned) {
-      // Allow downed player to crawl slowly or attempt to move, advancing the turn so companions can act
-      const zone = this.getOrCreateZone(player.zone);
-      const targetX = player.x + dx;
-      const targetY = player.y + dy;
-      if (targetX >= 0 && targetX < zone.width && targetY >= 0 && targetY < zone.height) {
-        const tile = zone.tiles[targetY]?.[targetX];
-        const occupied = Array.from(this.entities.values()).some(e => e.hp > 0 && e.x === targetX && e.y === targetY);
-        if (tile?.walkable && !occupied) {
-          player.x = targetX;
-          player.y = targetY;
-          this.log(`${player.name} crawls weakly along the ground...`, 'combat');
-        } else {
-          this.log(`${player.name} is incapacitated and clings to life!`, 'combat');
-        }
-      }
-      if (this.getPacingModeForZone(player.zone) === 'turn_based') {
-        this.stepZoneSimulation(player.zone);
-      } else {
-        this.notifyZone(player.zone);
-      }
+      this.log(`${player.name} is downed and cannot move! Press [Wait / Space] to hold on.`, 'system');
       return;
     }
 
@@ -1414,7 +1395,7 @@ export class GameEngine {
     targetZy: number = 1
   ) {
     const player = this.entities.get(playerId);
-    if (!player || !player.isPlayer) return;
+    if (!player || !player.isPlayer || player.isDowned) return;
 
     const curCoord = player.zone;
     let destPx = Math.max(0, Math.min(15, targetPx));
