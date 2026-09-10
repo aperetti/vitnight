@@ -211,7 +211,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 20,
-    cooldownTicks: 5,
+    cooldownTicks: 35,
     icon: '✧',
     description: 'Quantum Blink: Instantly teleports 3 tiles in facing or target direction, phasing cleanly through solid stone walls!'
   },
@@ -233,7 +233,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 20,
-    cooldownTicks: 4,
+    cooldownTicks: 30,
     icon: '🌪️',
     description: 'Spinning Blade Cyclone: Strikes all surrounding foes in a 360-degree radius for 150% damage and knocks them back 1 tile!'
   },
@@ -253,7 +253,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 15,
-    cooldownTicks: 5,
+    cooldownTicks: 30,
     icon: '💥',
     description: 'Concussive Bash: Smashes an adjacent enemy with your shield/fist for 35 damage, knocking them back and stunning them for 3 ticks!'
   },
@@ -284,7 +284,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 25,
-    cooldownTicks: 6,
+    cooldownTicks: 35,
     icon: '☄️',
     description: 'Fires an explosive shockwave projectile dealing 40 damage, knocking foes back 2 tiles and stunning for 2 ticks.'
   },
@@ -295,7 +295,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 3,
     energyCost: 35,
-    cooldownTicks: 12,
+    cooldownTicks: 40,
     icon: '🤖',
     description: 'Deploys an automated micro-turret adjacent to you that fires laser beams at nearby hostiles for 10 ticks!'
   },
@@ -326,7 +326,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 30,
-    cooldownTicks: 8,
+    cooldownTicks: 40,
     icon: '🌨️',
     description: 'Detonates a sub-zero blizzard around you, freezing all enemies within 2 tiles for 7 ticks and dealing 30 cryo damage!'
   },
@@ -337,7 +337,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 25,
-    cooldownTicks: 7,
+    cooldownTicks: 38,
     icon: '🧪',
     description: 'Releases a cloud of medical nanites, restoring 45 HP and curing all negative status effects for you and adjacent allies.'
   },
@@ -366,7 +366,7 @@ export const SKILL_DEFINITIONS: SkillDefinition[] = [
     type: 'active',
     spCost: 2,
     energyCost: 20,
-    cooldownTicks: 4,
+    cooldownTicks: 32,
     icon: '🪄',
     description: 'Kinetic Grav-Pulse: Uses a mystic wand to thrust a target mob 3 tiles backwards, violently slamming them into solid walls for massive collision damage and concussive stun!'
   }

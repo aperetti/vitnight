@@ -1,6 +1,6 @@
 import { Entity, Attributes, SkillDefinition } from '../shared/types';
 import { SKILL_DEFINITIONS } from '../shared/constants';
-import { calculateHeroDerivedStats } from '../shared/formulas';
+import { calculateHeroDerivedStats, calculateSkillCooldown } from '../shared/formulas';
 
 export class CharacterSheetManager {
   private modalEl: HTMLElement;
@@ -98,7 +98,7 @@ export class CharacterSheetManager {
         { key: 'str', label: 'STR (Strength)', desc: 'Increases melee damage (+2/pt) and carry capacity (+8 lbs/pt).', bonusText: `+${derivedStats.meleeAtkBonus} ATK • ${derivedStats.maxCarryWeight} lbs Cap` },
         { key: 'agi', label: 'AGI (Agility)', desc: 'Increases dodge chance (+2%/pt) and ranged weapon damage.', bonusText: `${derivedStats.dodgeChance}% Dodge • +${derivedStats.rangedAtkBonus} Ranged` },
         { key: 'tou', label: 'TOU (Toughness)', desc: 'Increases max health (+12 HP/pt) and physical damage reduction.', bonusText: `+${derivedStats.touHpBonus} HP • -${derivedStats.flatDamageReduction} Dmg/Hit` },
-        { key: 'int', label: 'INT (Intelligence)', desc: 'Increases energy pool (+10 EN/pt) and grants bonus SP on level-up.', bonusText: `+${derivedStats.intEnergyBonus} EN Pool` },
+        { key: 'int', label: 'INT (Intelligence)', desc: 'Increases energy pool (+10 EN/pt) and cooldown reduction (+2.5%/pt).', bonusText: `+${derivedStats.intEnergyBonus} EN • -${derivedStats.cooldownReductionPct}% CD` },
         { key: 'wil', label: 'WIL (Willpower)', desc: 'Increases force shield capacity (+15 Shield/pt) and energy recovery.', bonusText: `+${derivedStats.wilShieldBonus} Shield Cap` },
         { key: 'ego', label: 'EGO (Ego / Presence)', desc: 'Enhances companion damage resonance and team revival effectiveness.', bonusText: `+${derivedStats.partyEgoBonus}% Companion Aura` },
       ];
@@ -150,6 +150,11 @@ export class CharacterSheetManager {
           <span class="derived-stat-label">Energy Pool (EN)</span>
           <span class="derived-stat-val">⚡ ${derivedStats.energy} / ${derivedStats.maxEnergy}</span>
           <span class="derived-stat-sub">+${derivedStats.intEnergyBonus} from INT</span>
+        </div>
+        <div class="derived-stat-box">
+          <span class="derived-stat-label">Cooldown Reduction</span>
+          <span class="derived-stat-val">⏳ ${derivedStats.cooldownReductionPct >= 0 ? `-${derivedStats.cooldownReductionPct}%` : `+${Math.abs(derivedStats.cooldownReductionPct)}%`} CDR</span>
+          <span class="derived-stat-sub">Scales with INT (Base: 10)</span>
         </div>
         <div class="derived-stat-box">
           <span class="derived-stat-label">Force Shield</span>
@@ -217,8 +222,13 @@ export class CharacterSheetManager {
           const card = document.createElement('div');
           card.className = `charsheet-skill-card ${isLearned ? 'learned' : ''} ${isActive ? 'active-skill' : 'passive-skill'}`;
 
+          const baseCd = skill.cooldownTicks || 35;
+          const effectiveCd = calculateSkillCooldown(baseCd, hero.attributes?.int || 10);
+          const reductionTurns = baseCd - effectiveCd;
+          const reductionText = reductionTurns > 0 ? ` (-${reductionTurns} INT)` : (reductionTurns < 0 ? ` (+${Math.abs(reductionTurns)} INT)` : '');
+
           const typeBadge = isActive
-            ? `<span class="skill-type-tag active">⚡ ACTIVE (${skill.energyCost || 20} EN • ${skill.cooldownTicks || 4} CD)</span>`
+            ? `<span class="skill-type-tag active">⚡ ACTIVE (${skill.energyCost || 20} EN • ${effectiveCd} turns CD${reductionText})</span>`
             : `<span class="skill-type-tag passive">🛡️ PASSIVE PERK</span>`;
 
           card.innerHTML = `
@@ -234,7 +244,7 @@ export class CharacterSheetManager {
             <div class="charsheet-skill-action">
               ${isLearned
                 ? (isActive
-                    ? `<button class="charsheet-cast-btn" ${cd > 0 || !hasEnergy ? 'disabled' : ''}>${cd > 0 ? `⏳ Cooldown (${cd} ticks)` : (!hasEnergy ? '⚡ Need Energy' : '▶ Cast / Activate')}</button>`
+                    ? `<button class="charsheet-cast-btn" ${cd > 0 || !hasEnergy ? 'disabled' : ''}>${cd > 0 ? `⏳ Cooldown (${cd} turns)` : (!hasEnergy ? '⚡ Need Energy' : '▶ Cast / Activate')}</button>`
                     : `<span class="charsheet-skill-badge-learned">★ Passive Mastery Active</span>`)
                 : `<button class="charsheet-learn-btn" ${!canAfford ? 'disabled' : ''}>[Learn (${skill.spCost} SP)]</button>`}
             </div>

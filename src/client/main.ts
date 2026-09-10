@@ -8,6 +8,7 @@ import { CharacterSheetManager } from './charSheet';
 import { InventoryManager } from './inventory';
 import { HeroRole, ClientMessage, ServerMessage, ZoneData, Entity, ZoneCoord, StoryStage, WaveInfo, SkillDefinition } from '../shared/types';
 import { ZONE_WIDTH, ZONE_HEIGHT, SKILL_DEFINITIONS } from '../shared/constants';
+import { calculateSkillCooldown } from '../shared/formulas';
 import { generateRandomRoomName, sanitizeRoomName } from '../shared/roomGenerator';
 
 class ClientApp {
@@ -1156,7 +1157,10 @@ class ClientApp {
         btn.classList.remove('hidden');
         const cd = player.skillCooldowns?.[skill.id] || 0;
         const hasEnergy = player.energy >= (skill.energyCost || 0);
-        btn.textContent = `[${i + 5}] ${skill.icon} ${skill.name}${cd > 0 ? ` (${cd})` : ''}`;
+        const baseCd = skill.cooldownTicks || 35;
+        const effectiveCd = calculateSkillCooldown(baseCd, player.attributes?.int || 10);
+        btn.textContent = `[${i + 5}] ${skill.icon} ${skill.name}${cd > 0 ? ` (${cd}t)` : ''}`;
+        btn.title = `${skill.name} (${skill.energyCost || 0} EN) - Cooldown: ${effectiveCd} turns (Base ${baseCd} turns, INT CDR applied)${cd > 0 ? ` - ${cd} turns remaining` : ''}`;
         (btn as HTMLButtonElement).disabled = cd > 0 || !hasEnergy;
       } else {
         btn.classList.add('hidden');

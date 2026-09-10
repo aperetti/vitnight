@@ -29,7 +29,7 @@ import {
 } from '../shared/constants';
 import { generateZone, isRuinsParsec, isCaveParsec } from './mapGen';
 import { StoryManager } from './story';
-import { calculateShatterExplosion, calculateKnockback, areLikeItems, combineLikeItems, calculateHeroDerivedStats } from '../shared/formulas';
+import { calculateShatterExplosion, calculateKnockback, areLikeItems, combineLikeItems, calculateHeroDerivedStats, calculateSkillCooldown } from '../shared/formulas';
 import { stepCompanionBot } from './bots';
 import { getStartingEquipment, createItem, generateRandomLoot, calculateCarryWeight, calculateMaxCarryWeight, ITEM_TEMPLATES } from './items';
 import { findAStarPath, getHeroAggroRange, calculateHeroThreat } from '../shared/pathfinding';
@@ -892,25 +892,35 @@ export class GameEngine {
     }
     if (actionType === 'teleport') {
       this.executeTeleport(bot, targetX, targetY);
+      bot.skillCooldowns = bot.skillCooldowns || {};
+      bot.skillCooldowns['teleport'] = calculateSkillCooldown(35, bot.attributes?.int || 10);
       return;
     }
     if (actionType === 'kinetic_slam') {
       this.executeKineticSlam(bot, targetX, targetY);
+      bot.skillCooldowns = bot.skillCooldowns || {};
+      bot.skillCooldowns['kinetic_slam'] = calculateSkillCooldown(32, bot.attributes?.int || 10);
       return;
     }
     if (actionType === 'special') {
       const tx = targetX ?? bot.x + bot.facing.dx * 3;
       const ty = targetY ?? bot.y + bot.facing.dy * 3;
+      bot.skillCooldowns = bot.skillCooldowns || {};
       if (bot.role === 'beau') {
         this.fireProjectile(bot, tx, ty, 'ice');
         this.log(`Beau unleashes a crystalline ice blast!`, 'combat');
+        bot.skillCooldowns['special'] = calculateSkillCooldown(40, bot.attributes?.int || 10);
       } else if (bot.role === 'barrett') {
         this.fireProjectile(bot, tx, ty, 'fireball');
         this.log(`Barrett launches a crackling fireball!`, 'combat');
+        bot.skillCooldowns['special'] = calculateSkillCooldown(35, bot.attributes?.int || 10);
       } else if (bot.role === 'luther') {
         this.executeLutherRevive(bot);
+        bot.skillCooldowns['special'] = calculateSkillCooldown(38, bot.attributes?.int || 10);
       } else if (bot.role === 'luca') {
         this.executeKineticSlam(bot, tx, ty);
+        bot.skillCooldowns['kinetic_slam'] = calculateSkillCooldown(32, bot.attributes?.int || 10);
+        bot.skillCooldowns['special'] = calculateSkillCooldown(32, bot.attributes?.int || 10);
       }
       return;
     }
@@ -918,8 +928,12 @@ export class GameEngine {
       const tx = targetX ?? bot.x + bot.facing.dx;
       const ty = targetY ?? bot.y + bot.facing.dy;
       if (bot.role === 'luca') {
-        this.executeKineticSlam(bot, tx, ty);
-        return;
+        if ((bot.skillCooldowns?.['kinetic_slam'] || 0) <= 0) {
+          this.executeKineticSlam(bot, tx, ty);
+          bot.skillCooldowns = bot.skillCooldowns || {};
+          bot.skillCooldowns['kinetic_slam'] = calculateSkillCooldown(32, bot.attributes?.int || 10);
+          return;
+        }
       }
       const enemy = this.findEntityAt(bot.zone, tx, ty);
       if (enemy && !enemy.isPlayer) {
@@ -1540,7 +1554,7 @@ export class GameEngine {
 
     player.skillCooldowns = player.skillCooldowns || {};
     if ((player.skillCooldowns[skillId] || 0) > 0) {
-      this.log(`Skill is on cooldown! (${player.skillCooldowns[skillId]} ticks remaining)`, 'system');
+      this.log(`Skill is on cooldown! (${player.skillCooldowns[skillId]} turns remaining)`, 'system');
       return;
     }
 
@@ -1554,7 +1568,8 @@ export class GameEngine {
     }
 
     player.energy -= energyCost;
-    player.skillCooldowns[skillId] = skillDef.cooldownTicks || 4;
+    const baseCd = skillDef.cooldownTicks || 35;
+    player.skillCooldowns[skillId] = calculateSkillCooldown(baseCd, player.attributes?.int || 10);
 
     const zoneKey = this.getZoneKey(player.zone);
     const zoneEntities = Array.from(this.entities.values()).filter(

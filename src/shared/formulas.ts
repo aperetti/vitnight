@@ -153,6 +153,7 @@ export interface HeroDerivedStats {
   maxEnergy: number;
   energy: number;
   intEnergyBonus: number;
+  cooldownReductionPct: number;
   shieldCap: number;
   shieldHp: number;
   wilShieldBonus: number;
@@ -166,6 +167,27 @@ export interface HeroDerivedStats {
 }
 
 /**
+ * Calculates Cooldown Reduction percentage based on Intelligence.
+ * Standard baseline INT is 10 (0% CDR).
+ * Each point above 10 grants 2.5% CDR (up to 50% max CDR).
+ * Points below 10 increase cooldowns by 2.5% per point (up to +25%).
+ */
+export function calculateCooldownReductionPct(intelligence: number = 10): number {
+  const intDiff = intelligence - 10;
+  return Math.min(50, Math.max(-25, Math.round(intDiff * 2.5)));
+}
+
+/**
+ * Calculates effective skill cooldown in turns/ticks, scaled by Intelligence.
+ * Base cooldown for active skills is 30-40 turns.
+ */
+export function calculateSkillCooldown(baseCooldown: number, intelligence: number = 10): number {
+  const cdr = calculateCooldownReductionPct(intelligence);
+  const effective = Math.round(baseCooldown * (1 - cdr / 100));
+  return Math.max(1, effective);
+}
+
+/**
  * Calculate all derived stats from attributes, level, runes, and equipment for a hero.
  */
 export function calculateHeroDerivedStats(entity: Entity): HeroDerivedStats {
@@ -175,6 +197,7 @@ export function calculateHeroDerivedStats(entity: Entity): HeroDerivedStats {
 
   const touHpBonus = Math.max(0, (attrs.tou - baseAttrs.tou) * 12);
   const intEnergyBonus = Math.max(0, (attrs.int - baseAttrs.int) * 10);
+  const cooldownReductionPct = calculateCooldownReductionPct(attrs.int || 10);
   const wilShieldBonus = Math.max(0, (attrs.wil - baseAttrs.wil) * 15);
   const meleeAtkBonus = Math.max(0, (attrs.str - baseAttrs.str) * 2);
   const rangedAtkBonus = Math.max(0, Math.floor((attrs.agi - baseAttrs.agi) * 1.5));
@@ -222,6 +245,7 @@ export function calculateHeroDerivedStats(entity: Entity): HeroDerivedStats {
     maxEnergy,
     energy: entity.energy !== undefined ? entity.energy : maxEnergy,
     intEnergyBonus,
+    cooldownReductionPct,
     shieldCap,
     shieldHp: entity.shieldHp || 0,
     wilShieldBonus,
