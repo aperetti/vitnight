@@ -2953,42 +2953,42 @@ export class GameEngine {
       if (depth >= 1) {
         // Caverns
         if (i % 4 === 0) {
-          mobName = 'Slumberling Cave Titan';
-          mobSymbol = 'S';
+          mobName = 'Cave Skeleton Titan';
+          mobSymbol = SYMBOLS.mutantSkeleton;
           mobColor = COLORS.purpleEnder;
           mobHp = Math.floor(mobHp * 1.5);
         } else if (i % 3 === 0) {
-          mobName = 'Magma Beetle';
-          mobSymbol = 'b';
+          mobName = 'Magma Creeper';
+          mobSymbol = SYMBOLS.creeper;
           mobColor = COLORS.fireRed;
           hasRanged = true;
         } else if (i % 2 === 0) {
-          mobName = 'Ancient Chrome Automaton';
-          mobSymbol = 'O';
+          mobName = 'Chrome Skeleton Automaton';
+          mobSymbol = SYMBOLS.skeleton;
           mobColor = COLORS.cyan;
           hasRanged = true;
         } else {
-          mobName = 'Cavern Crawler';
-          mobSymbol = 'c';
+          mobName = 'Cavern Zombie Crawler';
+          mobSymbol = SYMBOLS.zombie;
           mobColor = COLORS.green;
         }
       } else {
         // Wilderness
         if (parasangX <= 1) {
-          mobName = (i % 2 === 0) ? 'Snapjaw Scavenger' : 'Orchard Wolf';
-          mobSymbol = (i % 2 === 0) ? 's' : 'd';
-          mobColor = COLORS.amberBright;
+          mobName = (i % 2 === 0) ? 'Wasteland Zombie' : 'Wasteland Skeleton';
+          mobSymbol = (i % 2 === 0) ? SYMBOLS.zombie : SYMBOLS.skeleton;
+          mobColor = (i % 2 === 0) ? COLORS.green : COLORS.boneWhite;
         } else if (parasangX >= 2 && parasangX <= 4 && parasangY <= 2) {
-          mobName = (i % 2 === 0) ? 'Phasing Wraith' : 'Murk Ghoul';
+          mobName = (i % 2 === 0) ? 'Phasing Ghost' : 'Murk Zombie';
           mobSymbol = (i % 2 === 0) ? SYMBOLS.ghost : SYMBOLS.zombie;
           mobColor = COLORS.mistCyan;
         } else if (parasangX >= 2 && parasangX <= 5 && parasangY >= 3) {
-          mobName = 'Crag Prowler';
-          mobSymbol = 'g';
-          mobColor = COLORS.stoneGray;
+          mobName = (i % 2 === 0) ? 'Crag Creeper' : 'Crag Zombie';
+          mobSymbol = (i % 2 === 0) ? SYMBOLS.creeper : SYMBOLS.zombie;
+          mobColor = COLORS.greenDark;
         } else if (parasangX >= 5 && parasangX <= 7) {
-          mobName = (i % 2 === 0) ? 'Bone Legionnaire' : 'Bone Hound';
-          mobSymbol = (i % 2 === 0) ? 'k' : 's';
+          mobName = (i % 2 === 0) ? 'Skeleton Legionnaire' : 'Bone Skeleton Archer';
+          mobSymbol = SYMBOLS.skeleton;
           mobColor = COLORS.boneWhite;
           if (i % 2 === 0) hasRanged = true;
         } else if (parasangX >= 8 && parasangX <= 10 && parasangY <= 4) {
@@ -2996,18 +2996,18 @@ export class GameEngine {
           mobSymbol = SYMBOLS.creeper;
           mobColor = COLORS.amberBright;
         } else if (parasangX >= 8 && parasangX <= 10 && parasangY >= 5) {
-          mobName = 'Clockwork Automaton';
-          mobSymbol = 'O';
+          mobName = (i % 2 === 0) ? 'Ancient Skeleton Guardian' : 'Clockwork Creeper';
+          mobSymbol = (i % 2 === 0) ? SYMBOLS.skeleton : SYMBOLS.creeper;
           mobColor = COLORS.cyan;
           hasRanged = true;
         } else if (parasangX >= 11 && parasangX <= 13) {
-          mobName = 'Colosseum Gladiator';
-          mobSymbol = 'K';
+          mobName = (i % 2 === 0) ? 'Champion Skeleton Gladiator' : 'Mutant Creeper Vanguard';
+          mobSymbol = (i % 2 === 0) ? SYMBOLS.mutantSkeleton : SYMBOLS.mutantCreeper;
           mobColor = COLORS.bossGold;
           mobHp = Math.floor(mobHp * 1.25);
         } else {
-          mobName = 'Void Stalker';
-          mobSymbol = 'V';
+          mobName = (i % 3 === 0) ? 'Void Zombie' : (i % 3 === 1 ? 'Void Skeleton' : 'Void Creeper');
+          mobSymbol = (i % 3 === 0) ? SYMBOLS.zombie : (i % 3 === 1 ? SYMBOLS.skeleton : SYMBOLS.creeper);
           mobColor = COLORS.purpleEnder;
           hasRanged = true;
         }
@@ -3021,7 +3021,7 @@ export class GameEngine {
       if (isElite) {
         const affixes = ['★ Frenzied', '★ Armored', '★ Glacial', '★ Vampiric', '★ Volatile'];
         eliteAffix = affixes[(i + waveNum + level) % affixes.length];
-        mobName = isBossWave && i === 1 ? `${eliteAffix} Zone Champion` : `${eliteAffix} ${mobName}`;
+        mobName = isBossWave && i === 1 ? `${eliteAffix} Champion ${mobName}` : `${eliteAffix} ${mobName}`;
         mobHp = Math.floor(mobHp * 1.4);
       }
 

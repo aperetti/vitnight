@@ -67,23 +67,90 @@ export class GameRenderer {
   }
 
   public getSpriteUrlForEntity(entity: Entity): string | null {
-    if (entity.role === 'barrett') return '/sprites/hero_barrett.png';
-    if (entity.role === 'luther') return '/sprites/hero_luther.png';
-    if (entity.role === 'beau') return '/sprites/hero_beau.png';
-    if (entity.role === 'cooper' || entity.name === 'Cooper') return '/sprites/hero_cooper.png';
+    if (entity.isPlayer) {
+      if (entity.role === 'barrett') return '/sprites/hero_barrett.png';
+      if (entity.role === 'luther') return '/sprites/hero_luther.png';
+      if (entity.role === 'beau') return '/sprites/hero_beau.png';
+      if (entity.role === 'cooper' || entity.name === 'Cooper') return '/sprites/hero_cooper.png';
+      return '/sprites/hero_barrett.png';
+    }
 
-    const name = entity.name.toLowerCase();
-    if (name.includes('ghost')) return '/sprites/monster_ghost.png';
-    if (name.includes('zombie')) return '/sprites/monster_zombie.png';
-    if (name.includes('skeleton')) return '/sprites/monster_skeleton.png';
-    if (name.includes('mutant creeper')) return '/sprites/monster_mutant_creeper.png';
-    if (name.includes('creeper')) return '/sprites/monster_creeper.png';
-    if (name.includes('rocky doom') || name.includes('rock king')) return '/sprites/monster_rocky_doom.png';
-    if (name.includes('golem')) return '/sprites/monster_golem.png';
-    if (name.includes('arch-villager') || name.includes('villager')) return '/sprites/monster_boss_arch_villager.png';
-    if (name.includes('ender') || name.includes('overlord') || name.includes('titan')) return '/sprites/monster_boss_heart_of_ender.png';
+    const name = (entity.name || '').toLowerCase();
+    const id = (entity.id || '').toLowerCase();
+    const sym = entity.symbol || '';
 
-    return null;
+    // 1. Skeletons (Skeleton Archer, Vanguard, Legionnaire, Hound, Gladiator, Titan)
+    if (
+      name.includes('skeleton') ||
+      name.includes('bone') ||
+      name.includes('legionnaire') ||
+      name.includes('gladiator') ||
+      sym === 's' ||
+      sym === 'S' ||
+      sym === 'k' ||
+      sym === 'K' ||
+      sym === 'd' ||
+      id.includes('skel')
+    ) {
+      return '/sprites/monster_skeleton.png';
+    }
+
+    // 2. Creepers (Mutant Creeper & Sulfur Creeper)
+    if (name.includes('mutant creeper') || sym === 'C' || id.includes('mutant-creeper')) {
+      return '/sprites/monster_mutant_creeper.png';
+    }
+    if (name.includes('creeper') || sym === 'c' || sym === 'b' || id.includes('creep')) {
+      return '/sprites/monster_creeper.png';
+    }
+
+    // 3. Zombies (Zombie, Murk Zombie, Ghoul, Prowler, Scavenger, Crawler, Wolf)
+    if (
+      name.includes('zombie') ||
+      name.includes('ghoul') ||
+      name.includes('prowler') ||
+      name.includes('scavenger') ||
+      name.includes('crawler') ||
+      sym === 'z' ||
+      sym === 'g' ||
+      id.includes('zombie')
+    ) {
+      return '/sprites/monster_zombie.png';
+    }
+
+    // 4. Bosses & Titans
+    if (name.includes('arch-villager') || name.includes('villager') || sym === 'V' || id.includes('villager')) {
+      return '/sprites/monster_boss_arch_villager.png';
+    }
+    if (name.includes('ender') || name.includes('overlord') || name.includes('nether titan') || sym === 'E' || id.includes('ender')) {
+      return '/sprites/monster_boss_heart_of_ender.png';
+    }
+    if (name.includes('rocky doom') || name.includes('rock king') || sym === 'r' || sym === 'R' || id.includes('rocky')) {
+      return '/sprites/monster_rocky_doom.png';
+    }
+
+    // 5. Ghosts
+    if (name.includes('ghost') || name.includes('wraith') || sym === 'G' || id.includes('ghost')) {
+      return '/sprites/monster_ghost.png';
+    }
+
+    // 6. Golems & Automatons
+    if (name.includes('golem') || name.includes('automaton') || sym === 'O' || id.includes('golem')) {
+      return '/sprites/monster_golem.png';
+    }
+
+    // 7. Guaranteed fallback for all hostile mobs: cycle through zombie, creeper, skeleton
+    // This ensures no hostile mob is ever rendered as a raw letter with a circle!
+    const mobCycle = [
+      '/sprites/monster_zombie.png',
+      '/sprites/monster_creeper.png',
+      '/sprites/monster_skeleton.png'
+    ];
+    let hash = 0;
+    const key = entity.id || entity.name || 'mob';
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    }
+    return mobCycle[hash % mobCycle.length];
   }
 
   public getSpriteUrlForItem(item: Item): string | null {
@@ -102,7 +169,6 @@ export class GameRenderer {
   public getSpriteUrlForTile(tile: Tile, _zone: ZoneData): string | null {
     if (tile.type === 'door') return '/sprites/tile_door.png';
     if (tile.type === 'water') return '/sprites/tile_water.png';
-    if (tile.char === '░' || tile.char === '>') return '/sprites/tile_dirt.png';
     return null;
   }
 
@@ -568,6 +634,53 @@ export class GameRenderer {
     return container;
   }
 
+  private createPathTile(x: number, y: number, tile: Tile, _zone: ZoneData): Container {
+    const container = new Container();
+    container.x = x * CELL_SIZE;
+    container.y = y * CELL_SIZE;
+
+    const gfx = new Graphics();
+    // Flat earthy base floor (rich dark loam)
+    gfx.rect(0, 0, CELL_SIZE, CELL_SIZE);
+    gfx.fill({ color: 0x16110b });
+
+    // Inner beaten path dirt fill
+    gfx.rect(1, 1, CELL_SIZE - 2, CELL_SIZE - 2);
+    gfx.fill({ color: 0x221a10, alpha: 0.8 });
+
+    // Subtle organic dirt / pebble grain speckles
+    const hash = ((x * 49287) ^ (y * 71523)) + 0x27d4eb2d;
+    const px1 = (Math.abs(hash) % (CELL_SIZE - 4)) + 2;
+    const py1 = (Math.abs(hash >> 3) % (CELL_SIZE - 4)) + 2;
+    const px2 = (Math.abs(hash >> 7) % (CELL_SIZE - 4)) + 2;
+    const py2 = (Math.abs(hash >> 11) % (CELL_SIZE - 4)) + 2;
+
+    gfx.rect(px1, py1, 2, 2);
+    gfx.fill({ color: 0x3d2b1f, alpha: 0.75 });
+    gfx.rect(px2, py2, 1, 1);
+    gfx.fill({ color: 0x4e3828, alpha: 0.85 });
+
+    container.addChild(gfx);
+
+    // Soft CP437 light shade glyph '░' or stipple centered on the tile
+    const txt = new Text({
+      text: tile.char === '░' ? '░' : (tile.char || '░'),
+      style: {
+        fontFamily: 'Courier New, monospace',
+        fontSize: CELL_SIZE - 4,
+        fontWeight: 'normal',
+        fill: 0x9a7852,
+        align: 'center'
+      }
+    });
+    txt.alpha = 0.6;
+    txt.x = 2;
+    txt.y = 2;
+    container.addChild(txt);
+
+    return container;
+  }
+
   private createTileDisplay(x: number, y: number, tile: Tile, zone: ZoneData): Sprite | Text | Graphics | Container {
     // 1. Continuous Wall autotiling
     if (tile.type === 'wall' || tile.type === 'breakable_wall') {
@@ -579,7 +692,12 @@ export class GameRenderer {
       return this.createAltarTile(x, y, tile, zone);
     }
 
-    // 3. Preloaded sprite or font glyph fallback
+    // 3. Flat Walkable Dirt Trails / Paths
+    if (tile.type === 'floor' && (tile.char === '░' || tile.color === COLORS.dirtPath || tile.color === '#9a7852')) {
+      return this.createPathTile(x, y, tile, zone);
+    }
+
+    // 4. Preloaded sprite or font glyph fallback
     const spriteUrl = this.getSpriteUrlForTile(tile, zone);
     const tex = spriteUrl ? this.getTexture(spriteUrl) : null;
     if (tex) {
@@ -878,12 +996,32 @@ export class GameRenderer {
         entContainer.addChild(iceBox);
       }
 
-      // Energy Shield on Mutant Creeper
+      // Energy Shield matrix visual (sleek sci-fi corner brackets + shield mini-bar)
       if (entity.hasShield && entity.shieldHp && entity.shieldHp > 0) {
         const shieldGfx = new Graphics();
-        shieldGfx.circle(CELL_SIZE / 2, CELL_SIZE / 2, CELL_SIZE * 0.9);
-        shieldGfx.stroke({ color: 0x00ffff, width: 2, alpha: 0.8 });
+        const cornerLen = 5;
+        shieldGfx.stroke({ color: 0x00e5ff, width: 1.5, alpha: 0.85 });
+        // Top-left bracket
+        shieldGfx.moveTo(1, 1 + cornerLen).lineTo(1, 1).lineTo(1 + cornerLen, 1);
+        // Top-right bracket
+        shieldGfx.moveTo(CELL_SIZE - 1 - cornerLen, 1).lineTo(CELL_SIZE - 1, 1).lineTo(CELL_SIZE - 1, 1 + cornerLen);
+        // Bottom-left bracket
+        shieldGfx.moveTo(1, CELL_SIZE - 1 - cornerLen).lineTo(1, CELL_SIZE - 1).lineTo(1 + cornerLen, CELL_SIZE - 1);
+        // Bottom-right bracket
+        shieldGfx.moveTo(CELL_SIZE - 1 - cornerLen, CELL_SIZE - 1).lineTo(CELL_SIZE - 1, CELL_SIZE - 1).lineTo(CELL_SIZE - 1, CELL_SIZE - 1 - cornerLen);
+        shieldGfx.stroke();
         entContainer.addChild(shieldGfx);
+
+        // Shield mini-bar right above health bar
+        const shieldBar = new Graphics();
+        const barWidth = CELL_SIZE;
+        const maxShield = 120;
+        const shieldPct = Math.min(1, Math.max(0, entity.shieldHp / maxShield));
+        shieldBar.rect(0, -8, barWidth, 2);
+        shieldBar.fill({ color: 0x003344 });
+        shieldBar.rect(0, -8, barWidth * shieldPct, 2);
+        shieldBar.fill({ color: 0x00ffff });
+        entContainer.addChild(shieldBar);
       }
 
       // Health bar above entity
